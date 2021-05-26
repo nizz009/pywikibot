@@ -26,8 +26,8 @@
    :alt: Weekly downloads
    :target: https://pepy.tech/project/pywikibot
    
-Note: This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
-==================================================================================================
+This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
+===========================================================================================
 
 Pywikibot
 =========
