@@ -25,6 +25,8 @@
 .. image:: https://static.pepy.tech/personalized-badge/pywikibot?period=week&units=international_system&left_color=black&right_color=blue&left_text=weekly
    :alt: Weekly downloads
    :target: https://pepy.tech/project/pywikibot
+   
+#### Note: This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot 
 
 Pywikibot
 =========
