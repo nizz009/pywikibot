@@ -26,11 +26,10 @@
    :alt: Weekly downloads
    :target: https://pepy.tech/project/pywikibot
    
-This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
-===========================================================================================
-
 Pywikibot
 =========
+
+#### This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
 
 The Pywikibot framework is a Python library that interfaces with the
 `MediaWiki API <https://www.mediawiki.org/wiki/API:Main_page>`_
