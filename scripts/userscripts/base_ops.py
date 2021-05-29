@@ -72,12 +72,15 @@ class WdPage:
 
 		return 0
 
-	def addWdProp(self, prop_id='', prop_value=''):
+	def addWdProp(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id=''):
 		"""
 		Adds a new property in Wikidata
 
 		@param prop_id: ID of the property
 		@param prop_value: ID of property's value
+		@param qualifier_id: ID of the qualifier
+		@param qualval_id: ID of the qualifier's value
+
 		@type all: string
 
 		"""
@@ -97,13 +100,13 @@ class WdPage:
 				2 to over-write the existing property\n\
 				3 to add another value to the property\n')
 
-			if choice == 1:
+			if choice == '1':
 				return
 
-			elif choice == 2:
+			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
 			
-			elif choice != 3:
+			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
 			
@@ -117,12 +120,17 @@ class WdPage:
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new property')
 
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
+
 		except:
 			print('Error in adding new property.')
 
 		return 0
 
-	def addFiles(self, prop_id='', prop_value=''):
+	def addFiles(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id=''):
 		""" Adds files from Commons to Wikidata """
 
 		print(self.page.title())
@@ -141,13 +149,13 @@ class WdPage:
 				2 to over-write the existing property\n\
 				3 to add another value to the property\n')
 
-			if choice == 1:
+			if choice == '1':
 				return
 
-			elif choice == 2:
+			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
 			
-			elif choice != 3:
+			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
 		
@@ -161,12 +169,17 @@ class WdPage:
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new file')
 
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
+
 		except:
 			print('Error in adding new file.')
 
 		return 0
 
-	def addNumeric(self, prop_id='', prop_value=''):
+	def addNumeric(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -185,13 +198,13 @@ class WdPage:
 				2 to over-write the existing property\n\
 				3 to add another value to the property\n')
 
-			if choice == 1:
+			if choice == '1':
 				return
 
-			elif choice == 2:
+			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
 			
-			elif choice != 3:
+			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
 		
@@ -204,6 +217,11 @@ class WdPage:
 			text = input("Do you want to save this property? (y/n) ")
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
 
 		except:
 			print('Error in adding numeric value.')
@@ -234,9 +252,9 @@ class WdPage:
 				1 to add it Wikidata\n\
 				2 to skip\n')
 
-			if choice == 1:
+			if choice == '1':
 				self.page.addClaim(claim, summary = u'Adding new property')
-			elif choice == 2:
+			elif choice == '2':
 				print('Skipping the addition of property and source.\n')
 				return 
 			else:
@@ -276,7 +294,7 @@ class WdPage:
 
 		return 0
 
-	def addQualifiers(self, repo='', qualifier_id='', qualval_id='', prop_id='', prop_val='', claim=''):
+	def addQualifiers(self, repo='', prop_id='', prop_val='', claim='', qualifier_id='', qualval_id=''):
 		"""
 		Adds a qualifier
 	
@@ -306,7 +324,7 @@ class WdPage:
 
 
 def main():
-	page_name = input('Name of article: ')
+	# page_name = input('Name of article: ')
 	wd_value = 'Q4115189'
 	wp_page = ''
 	wd_page = ''
@@ -329,8 +347,8 @@ def main():
 		return 1
 		
 	if wd_page:
-		wd_page.printWdContents()
-		wd_page.addWdProp('P31', 'Q6')
+		# wd_page.printWdContents()
+		wd_page.addWdProp(prop_id='P31', prop_value='Q13406268', lang='en')
 
 	return 0
 		
