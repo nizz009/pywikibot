@@ -121,9 +121,11 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new property')
 
 				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
 				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
 
 		except:
 			print('Error in adding new property.')
@@ -170,9 +172,11 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new file')
 
 				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
 				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
 
 		except:
 			print('Error in adding new file.')
@@ -219,9 +223,11 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
 
 				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang)
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
 				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id)
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
 
 		except:
 			print('Error in adding numeric value.')
@@ -235,17 +241,26 @@ class WdPage:
 		@param claim: property and it's value to which this associated with
 
 		"""
+		claim_prop = claim.getID()
+		claim_target = claim.getTarget()
+
 		wd_items = self.page.get()
 
 		flag = 0
-		for items in wd_items['claims']:
-			try:
-				item = wd_items['claims'][items]
-				if claim in item:
-					flag = 1
-					break
-			except:
-				print('Error in browsing through items.')
+		for props in wd_items['claims']:
+			if props == claim_prop:
+				try:
+					item = wd_items['claims'][props]
+					for value in item:
+						try:
+							value_qid = value.getTarget()
+							if target.title() == value_qid.title():
+								flag = 1
+								break
+						except:
+							pass
+				except:
+					print('Error in browsing through items.')
 
 		if flag == 0:
 			choice = input('Property and value do not exist. Select:\n\
@@ -254,16 +269,17 @@ class WdPage:
 
 			if choice == '1':
 				self.page.addClaim(claim, summary = u'Adding new property')
+				return 1
 			elif choice == '2':
 				print('Skipping the addition of property and source.\n')
-				return 
+				return 0
 			else:
 				print('Invalid choice.\n')
-				return
-
+				return 0
 		return 0
 
-	def addImportedFrom(self, repo='', prop_id='', prop_val='', claim='', lang=''):
+
+	def addImportedFrom(self, repo='', prop_id='', prop_val='', claim='', lang='', status=0):
 		"""
 		Adds a reference/source
 	
@@ -272,6 +288,9 @@ class WdPage:
 		@param prop_val: ID of value associated with property
 		@param claim: property and it's value to which this associates with
 		@param lang: language of the wiki - must be a value from 'langs' dict
+		@param status: decide whether to test for claim's existence or not
+						(0 - method is called directly by user
+						 1 - method is called indirectly by other methods which add a property to Wd)
 
 		"""
 		if prop_id and prop_val:
@@ -283,9 +302,10 @@ class WdPage:
 				print('Incorrect property id or value provided.\n')
 				return 1
 
-		self.checkClaimExistence(claim)
+		if status == 0:
+			status = self.checkClaimExistence(claim)
 
-		if repo and claim and lang and lang in langs.keys():
+		if repo and claim and status and lang and lang in langs.keys():
 			importedfrom = pywikibot.Claim(repo, 'P143') #imported from
 			importedwp = pywikibot.ItemPage(repo, langs[lang])
 			importedfrom.setTarget(importedwp)
@@ -294,7 +314,7 @@ class WdPage:
 
 		return 0
 
-	def addQualifiers(self, repo='', prop_id='', prop_val='', claim='', qualifier_id='', qualval_id=''):
+	def addQualifiers(self, repo='', prop_id='', prop_val='', claim='', qualifier_id='', qualval_id='', status=0):
 		"""
 		Adds a qualifier
 	
@@ -313,7 +333,8 @@ class WdPage:
 				print('Incorrect property id or value provided.\n')
 				return 1
 
-		self.checkClaimExistence(claim)
+		if status == 0:
+			self.checkClaimExistence(claim)
 
 		if repo and claim and qualval_id:
 			qualifier = pywikibot.Claim(repo, qualifier_id)
