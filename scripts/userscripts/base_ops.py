@@ -81,6 +81,7 @@ class WdPage:
 
 		@param prop_id: ID of the property
 		@param prop_value: ID of property's value
+		@param lang: language of Wikipedia artcile: for references
 		@param qualifier_id: ID of the qualifier
 		@param qualval_id: ID of the qualifier's value
 
@@ -240,6 +241,70 @@ class WdPage:
 			print('Error in adding numeric value.')
 
 		return 0
+
+	def addDate(self, prop_id='', date='', lang='', qualifier_id='', qualval_id=''):
+		""" Adds numeric values to Wikidata """
+
+		print(self.page.title())
+
+		if date and date != '0-0-0':
+			self.page.get()
+
+			if prop_id in self.page.claims:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
+
+				if choice == '1':
+					return
+
+				elif choice == '2':
+					self.page.removeClaims(self.page.claims[prop_id])
+				
+				elif choice > '3':
+					print("Invalid choice.\n")
+					return 1
+
+			now = datetime.datetime.now()
+
+			check_ok = True
+			if int(date.split('-')[0]) > now.year:
+				check_ok = False
+			try:
+				if int(date.split('-')[0]) == now.year and int(date.split('-')[1]) > now.month:
+					check_ok = False
+			except:
+				null = 0
+
+			if check_ok:
+				try:
+					new_prop = pywikibot.Claim(repo, prop_id)
+
+					if len(date.split('-')) == 3:
+						new_prop.setTarget(pywikibot.WbTime(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2])))
+					elif len(date.split('-')) == 2:
+						new_prop.setTarget(pywikibot.WbTime(year=int(date.split('-')[0]), month=int(date.split('-')[1])))
+					elif len(date.split('-')) == 1:
+						new_prop.setTarget(pywikibot.WbTime(year=int(date.split('-')[0])))
+
+					# confirmation
+					print(new_prop)
+					text = input("Do you want to save this property? (y/n) ")
+					if text == 'y':
+						self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+						self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+						if lang:
+							self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+							# print("Reference added.")
+						if qualifier_id and qualval_id:
+							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+							# print("Qualifier added.")
+
+				except:
+					print('Error in adding numeric value.')
+		return 0
 		
 	def checkClaimExistence(self, claim=''):
 		"""
@@ -319,7 +384,7 @@ class WdPage:
 			importedfrom.setTarget(importedwp)
 			claim.addSource(importedfrom, summary='Adding 1 reference: [[Property:P143]]')
 			self.page = pywikibot.ItemPage(enwd, self.wd_value)
-			print('Information added successfully.\n')
+			print('Reference/Source added successfully.\n')
 
 		return 0
 
@@ -351,6 +416,8 @@ class WdPage:
 			qualifier.setTarget(qualifier_val)
 			claim.addQualifier(qualifier, summary='Adding 1 qualifier')
 			self.page = pywikibot.ItemPage(enwd, self.wd_value)
+			print('Qualifier added successfully.\n')
+
 		return 0
 
 
