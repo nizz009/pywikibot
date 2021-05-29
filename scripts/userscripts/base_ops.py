@@ -31,6 +31,7 @@ class WpPage:
 
 	def __init__(self, page_name=''):
 		if page_name:
+			self.page_name = page_name
 			self.page = pywikibot.Page(enwiki, page_name)
 
 	def printWpContents(self):
@@ -50,6 +51,8 @@ class WdPage:
 			self.page = pywikibot.ItemPage(enwd, wd_value)
 		elif wdpage:
 			self.page = pywikibot.ItemPage.fromPage(wdpage)
+
+		self.wd_value = self.page.title()
 
 	def printWdContents(self):
 		""" Prints contents of a Wikidata page """
@@ -119,7 +122,9 @@ class WdPage:
 			text = input("Do you want to save this property? (y/n) ")
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new property')
-
+				# retrieving the updated page
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+				
 				if lang:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
 					# print("Reference added.")
@@ -170,6 +175,7 @@ class WdPage:
 			text = input("Do you want to save this property? (y/n) ")
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new file')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 				if lang:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
@@ -221,6 +227,7 @@ class WdPage:
 			text = input("Do you want to save this property? (y/n) ")
 			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 				if lang:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
@@ -269,6 +276,7 @@ class WdPage:
 
 			if choice == '1':
 				self.page.addClaim(claim, summary = u'Adding new property')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 				return 1
 			elif choice == '2':
 				print('Skipping the addition of property and source.\n')
@@ -310,6 +318,7 @@ class WdPage:
 			importedwp = pywikibot.ItemPage(repo, langs[lang])
 			importedfrom.setTarget(importedwp)
 			claim.addSource(importedfrom, summary='Adding 1 reference: [[Property:P143]]')
+			self.page = pywikibot.ItemPage(enwd, self.wd_value)
 			print('Information added successfully.\n')
 
 		return 0
@@ -341,6 +350,7 @@ class WdPage:
 			qualifier_val = pywikibot.ItemPage(repo, qualval_id)
 			qualifier.setTarget(qualifier_val)
 			claim.addQualifier(qualifier, summary='Adding 1 qualifier')
+			self.page = pywikibot.ItemPage(enwd, self.wd_value)
 		return 0
 
 
