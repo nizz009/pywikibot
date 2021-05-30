@@ -220,8 +220,10 @@ class WdPage:
 				return 1
 		
 		try:
-			new_prop = pywikibot.Claim(repo, prop_id)	
+			new_prop = pywikibot.Claim(repo, prop_id)
+			print('hello')
 			new_prop.setTarget(val)
+			print(val)
 
 			# confirmation
 			print(new_prop)
@@ -318,7 +320,6 @@ class WdPage:
 
 		wd_items = self.page.get()
 
-		flag = 0
 		for props in wd_items['claims']:
 			if props == claim_prop:
 				try:
@@ -326,33 +327,32 @@ class WdPage:
 					for value in item:
 						try:
 							value_qid = value.getTarget()
-							if target.title() == value_qid.title():
-								flag = 1
-								break
+							if claim_target.title() == value_qid.title():
+								return value
 						except:
 							pass
 				except:
 					print('Error in browsing through items.')
 
-		if flag == 0:
-			choice = input('Property and value do not exist. Select:\n\
-				1 to add it Wikidata\n\
-				2 to skip\n')
+		choice = input('Property and value do not exist. Select:\n\
+			1 to add it Wikidata\n\
+			2 to skip\n')
 
-			if choice == '1':
-				self.page.addClaim(claim, summary = u'Adding new property')
-				self.page = pywikibot.ItemPage(enwd, self.wd_value)
-				return 1
-			elif choice == '2':
-				print('Skipping the addition of property and source.\n')
-				return 0
-			else:
-				print('Invalid choice.\n')
-				return 0
+		if choice == '1':
+			self.page.addClaim(claim, summary = u'Adding new property')
+			self.page = pywikibot.ItemPage(enwd, self.wd_value)
+			return claim
+		elif choice == '2':
+			print('Skipping the addition of property and source.\n')
+			return 0
+		else:
+			print('Invalid choice.\n')
+			return 0
+
 		return 0
 
 
-	def addImportedFrom(self, repo='', prop_id='', prop_val='', claim='', lang='', status=0):
+	def addImportedFrom(self, repo=repo, prop_id='', prop_value='', claim='', lang='', status=0):
 		"""
 		Adds a reference/source
 	
@@ -366,7 +366,7 @@ class WdPage:
 						 1 - method is called indirectly by other methods which add a property to Wd)
 
 		"""
-		if prop_id and prop_val:
+		if prop_id and prop_value:
 			try:
 				new_prop_val = pywikibot.ItemPage(enwd, prop_value)
 				claim = pywikibot.Claim(enwd, prop_id)	
@@ -376,9 +376,9 @@ class WdPage:
 				return 1
 
 		if status == 0:
-			status = self.checkClaimExistence(claim)
+			claim = self.checkClaimExistence(claim)
 
-		if repo and claim and status and lang and lang in langs.keys():
+		if repo and claim and lang and lang in langs.keys():
 			importedfrom = pywikibot.Claim(repo, 'P143') #imported from
 			importedwp = pywikibot.ItemPage(repo, langs[lang])
 			importedfrom.setTarget(importedwp)
@@ -388,7 +388,7 @@ class WdPage:
 
 		return 0
 
-	def addQualifiers(self, repo='', prop_id='', prop_val='', claim='', qualifier_id='', qualval_id='', status=0):
+	def addQualifiers(self, repo=repo, prop_id='', prop_value='', claim='', qualifier_id='', qualval_id='', status=0):
 		"""
 		Adds a qualifier
 	
@@ -398,7 +398,7 @@ class WdPage:
 		@type of all (except repo and claim): string
 
 		"""
-		if prop_id and prop_val:
+		if prop_id and prop_value:
 			try:
 				new_prop_val = pywikibot.ItemPage(enwd, prop_value)
 				claim = pywikibot.Claim(enwd, prop_id)	
@@ -408,9 +408,9 @@ class WdPage:
 				return 1
 
 		if status == 0:
-			self.checkClaimExistence(claim)
+			claim = self.checkClaimExistence(claim)
 
-		if repo and claim and qualval_id:
+		if repo and claim and qualifier_id and qualval_id:
 			qualifier = pywikibot.Claim(repo, qualifier_id)
 			qualifier_val = pywikibot.ItemPage(repo, qualval_id)
 			qualifier.setTarget(qualifier_val)
@@ -446,7 +446,14 @@ def main():
 		
 	if wd_page:
 		# wd_page.printWdContents()
-		wd_page.addWdProp(prop_id='P31', prop_value='Q13406268', lang='en')
+		# wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
+		# wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
+		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
+		# wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
+		wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
+
+		# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
+		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
 
 	return 0
 		
