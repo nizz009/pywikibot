@@ -450,7 +450,7 @@ def main():
 		# wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
 		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
 		# wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
-		wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
+		# wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
 
 		# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
 		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
