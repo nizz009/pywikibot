@@ -65,18 +65,17 @@ class WpPage:
 
 		return 0
 
-	def searchWpPage(self, prop_id='', prop_values=''):
+	def searchWpPage(self, props=''):
 		""" 
-		Searches for a Wp in Wd
+		Searches for a Wp article in Wd
+		
+		@param props: dictionary of format {prop_id_1: [prop_values], prop_id_2: [prop_values]}
+					prop_id: ID of the property used to match Wd item with Wp article
+					prop_values: Property values associated with the prop_id
 
-		@param prop_id: ID of the property used to match Wd item with Wp article
-		@param prop_values: Property values associated with the prop_id 
-
-		"""
-
-		if not prop_values:
-			print('No property values for matching provided. Skipping the search.\n')
-			return 1 
+		@return value: title (Qvalue) of the Wd Item
+	
+		""" 
 
 		page_title = self.page.title()
 		page_title_ = page_title.split('(')[0].strip()
@@ -87,31 +86,51 @@ class WpPage:
 		if not '<search />' in raw:
 			q_values = re.findall(r'id="(Q\d+)"', raw)
 			for q_value in q_values:
+				# get page for each Qval in search result
 				itemfound = pywikibot.ItemPage(repo, q_value)
 				item_dict = itemfound.get()
 				
-				if prop_id in itemfound.claims:
-					itemfound_values = []
-					for claim in item_dict['claims'][prop_id]:
-						prop_id_value = claim.getTarget()
-						prop_id_item_dict = prop_id_value.get()
-						itemfound_values.append(prop_id_item_dict['labels']['en'])
+				prop_count = 0
+				flag = 0
+				# check for each property criteria provided
+				for prop_id in props.keys():
+					prop_count += 1
 
-					itemfound_values = [itemfound_value.replace('\xa0',' ') for itemfound_value in itemfound_values]
+					if not props[prop_id]:
+						print('No property values for' + str(prop_id) + 'provided. Skipping the search.\n')
+						continue
 
-					if itemfound_values in prop_values:
-						return (itemfound.title())
+					# property exists in the Wd page
+					if prop_id in itemfound.claims:
+						itemfound_values = []
+						for claim in item_dict['claims'][prop_id]:
+							prop_id_value = claim.getTarget()
+							prop_id_item_dict = prop_id_value.get()
+							itemfound_values.append(prop_id_item_dict['labels']['en'])
+
+						itemfound_values = [itemfound_value.replace('\xa0',' ') for itemfound_value in itemfound_values]
+
+						itemfound_count = 0
+						for itemfound_value in itemfound_values:
+							if itemfound_value in props[prop_id]:
+								itemfound_count += 1
+
+						if itemfound_count >= (len(props[prop_id])/2):
+							flag += 1
+						else:
+							break
 					else:
 						continue
-				else:
-					continue
+
+				if flag >= (prop_count/2):
+					return itemfound.title()
 		else:
 			print('Item doesn\'t exist.')
-			return 0
+			return None
 
 		print('No match was found.')
 
-		return 0
+		return None
 
 
 
@@ -493,19 +512,19 @@ class WdPage:
 		return 0
 
 
-def main():
-	# page_name = input('Name of article: ')
-	wd_value = 'Q4115189'
-	wp_page = ''
-	wd_page = ''
+# def main():
+# 	page_name = input('Name of article: ')
+# 	wd_value = 'Q4115189'
+# 	wp_page = ''
+# 	wd_page = ''
 
-	# # Test for Wikipedia page
-	# try:
-	# 	wp_page = WpPage(page_name)
-	# 	print(wp_page.searchWpPage('P50', [['J. K. Rowling']]))
-	# except:
-	# 	("Page does not exist.\n")
-	# 	return 1
+# 	# Test for Wikipedia page
+# 	try:
+# 		wp_page = WpPage(page_name)
+# 		print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
+# 	except:
+# 		("Page does not exist.\n")
+# 		return 1
 
 	# if wp_page:
 	# 	wp_page.printWpContents()
@@ -528,7 +547,7 @@ def main():
 		# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
 		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
 
-	return 0
+# 	return 0
 		
-if __name__ == "__main__":
-	main()
+# if __name__ == "__main__":
+# 	main()
