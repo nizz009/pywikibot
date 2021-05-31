@@ -14,6 +14,7 @@ import urllib.request
 import urllib.parse
 import dateparser
 import datetime
+import unicodedata
 
 enwiki = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
@@ -25,6 +26,28 @@ langs = {
 	'fr': 'Q8447', 
 	'it': 'Q11920', 
 	}
+
+# helper functions
+
+# from https://bitbucket.org/mikepeel/wikicode/src/master/wir_newpages.py
+def getURL(url='', retry=True, timeout=30):
+	raw = ''
+	req = urllib.request.Request(url, headers={ 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0' })
+	try:
+		raw = urllib.request.urlopen(req, timeout=timeout).read().strip().decode('utf-8')
+	except:
+		sleep = 10 # seconds
+		maxsleep = 900
+		while retry and sleep <= maxsleep:
+			print('Error while retrieving: %s' % (url))
+			print('Retry in %s seconds...' % (sleep))
+			time.sleep(sleep)
+			try:
+				raw = urllib.request.urlopen(req, timeout=timeout).read().strip().decode('utf-8')
+			except:
+				pass
+			sleep = sleep * 2
+	return raw
 
 # deals with Wikipedia articles
 class WpPage:
@@ -41,6 +64,55 @@ class WpPage:
 		print(content)
 
 		return 0
+
+	def searchWpPage(self, prop_id='', prop_values=''):
+		""" 
+		Searches for a Wp in Wd
+
+		@param prop_id: ID of the property used to match Wd item with Wp article
+		@param prop_values: Property values associated with the prop_id 
+
+		"""
+
+		if not prop_values:
+			print('No property values for matching provided. Skipping the search.\n')
+			return 1 
+
+		page_title = self.page.title()
+		page_title_ = page_title.split('(')[0].strip()
+		searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
+		raw = getURL(searchitemurl)
+
+		# searches and matches the authors for the searched item
+		if not '<search />' in raw:
+			q_values = re.findall(r'id="(Q\d+)"', raw)
+			for q_value in q_values:
+				itemfound = pywikibot.ItemPage(repo, q_value)
+				item_dict = itemfound.get()
+				
+				if prop_id in itemfound.claims:
+					itemfound_values = []
+					for claim in item_dict['claims'][prop_id]:
+						prop_id_value = claim.getTarget()
+						prop_id_item_dict = prop_id_value.get()
+						itemfound_values.append(prop_id_item_dict['labels']['en'])
+
+					itemfound_values = [itemfound_value.replace('\xa0',' ') for itemfound_value in itemfound_values]
+
+					if itemfound_values in prop_values:
+						return (itemfound.title())
+					else:
+						continue
+				else:
+					continue
+		else:
+			print('Item doesn\'t exist.')
+			return 0
+
+		print('No match was found.')
+
+		return 0
+
 
 
 # deals with Wikidata articles
@@ -427,9 +499,10 @@ def main():
 	wp_page = ''
 	wd_page = ''
 
-	# Test for Wikipedia page
+	# # Test for Wikipedia page
 	# try:
 	# 	wp_page = WpPage(page_name)
+	# 	print(wp_page.searchWpPage('P50', [['J. K. Rowling']]))
 	# except:
 	# 	("Page does not exist.\n")
 	# 	return 1
@@ -437,20 +510,20 @@ def main():
 	# if wp_page:
 	# 	wp_page.printWpContents()
 
-	# Test for Wikidata page
-	try:
-		wd_page = WdPage(wd_value)
-	except:
-		("Page does not exist.\n")
-		return 1
+	# # Test for Wikidata page
+	# try:
+	# 	wd_page = WdPage(wd_value)
+	# except:
+	# 	("Page does not exist.\n")
+	# 	return 1
 		
-	if wd_page:
+	# if wd_page:
 		# wd_page.printWdContents()
 		# wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
 		# wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
 		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
 		# wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
-		wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
+		# wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
 
 		# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
 		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
