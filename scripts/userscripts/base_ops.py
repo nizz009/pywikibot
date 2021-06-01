@@ -16,7 +16,7 @@ import dateparser
 import datetime
 import unicodedata
 
-enwiki = pywikibot.Site('en', 'wikipedia')
+enwp = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
 repo = enwd.data_repository()
 encommons = pywikibot.Site('commons', 'commons')
@@ -55,7 +55,7 @@ class WpPage:
 	def __init__(self, page_name=''):
 		if page_name:
 			self.page_name = page_name
-			self.page = pywikibot.Page(enwiki, page_name)
+			self.page = pywikibot.Page(enwp, page_name)
 
 	def printWpContents(self):
 		""" Prints contents of a Wikipedia page """
@@ -288,7 +288,7 @@ class WdPage:
 
 		if prop_value:
 			try:
-				val = pywikibot.WbQuantity(amount=prop_value, site=enwiki)
+				val = pywikibot.WbQuantity(amount=prop_value, site=enwp)
 			except:
 				print('Incorrect property value provided.\n')
 				return 1
