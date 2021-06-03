@@ -1,5 +1,7 @@
+Note: This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
+-------------------------------------------------------------------------------------------------
 
-#### Note: This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot #### 
+
 
 .. image:: https://travis-ci.org/wikimedia/pywikibot.svg?branch=master
    :alt: Travis Build Status
