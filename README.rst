@@ -1,4 +1,4 @@
-Note: This repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
+This fork of the repo is for Outreachy Round 22 - Synchronising Wikidata and Wikipedias using pywikibot
 -------------------------------------------------------------------------------------------------
 
 
