@@ -1,20 +1,22 @@
-import pywikibot
-from pywikibot import pagegenerators
-
-import json
-import os
-import re
-import string
-import sys
+# import json
+# import os
+# import re
+# import string
+# import sys
 import _thread
 import time
-import unicodedata
+# import unicodedata
 import urllib
 import urllib.request
 import urllib.parse
-import dateparser
-import datetime
-import unicodedata
+# import dateparser
+# import datetime
+
+import pywikibot
+from pywikibot import pagegenerators
+
+# file imports
+import search_patterns
 
 enwp = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
@@ -28,7 +30,6 @@ langs = {
 	}
 
 # helper functions
-
 # from https://bitbucket.org/mikepeel/wikicode/src/master/wir_newpages.py
 def getURL(url='', retry=True, timeout=30):
 	raw = ''
@@ -68,13 +69,13 @@ class WpPage:
 	def searchWpPage(self, props=''):
 		""" 
 		Searches for a Wp article in Wd
-		
+
 		@param props: dictionary of format {prop_id_1: [prop_values], prop_id_2: [prop_values]}
 					prop_id: ID of the property used to match Wd item with Wp article
 					prop_values: Property values associated with the prop_id
 
 		@return value: title (Qvalue) of the Wd Item
-	
+
 		""" 
 
 		page_title = self.page.title()
@@ -89,7 +90,7 @@ class WpPage:
 				# get page for each Qval in search result
 				itemfound = pywikibot.ItemPage(repo, q_value)
 				item_dict = itemfound.get()
-				
+	
 				prop_count = 0
 				flag = 0
 				# check for each property criteria provided
@@ -132,6 +133,12 @@ class WpPage:
 
 		return None
 
+	def find_infobox(self):
+		if self.page:
+			search_patterns.infobox(self.page.text)
+		else:
+			print('No page exists.')
+			return 1
 
 
 # deals with Wikidata articles
@@ -200,11 +207,11 @@ class WdPage:
 
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
-			
-			elif choice > '3':
+		
+		elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
-			
+	
 		try:
 			new_prop = pywikibot.Claim(enwd, prop_id)	
 			new_prop.setTarget(new_prop_val)
@@ -216,7 +223,7 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new property')
 				# retrieving the updated page
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
-				
+		
 				if lang:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
 					# print("Reference added.")
@@ -253,11 +260,11 @@ class WdPage:
 
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
-			
+	
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
-		
+
 		try:
 			new_prop = pywikibot.Claim(repo, prop_id)	
 			new_prop.setTarget(new_prop_val)
@@ -305,11 +312,11 @@ class WdPage:
 
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
-			
+	
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
-		
+
 		try:
 			new_prop = pywikibot.Claim(repo, prop_id)
 			print('hello')
@@ -354,7 +361,7 @@ class WdPage:
 
 				elif choice == '2':
 					self.page.removeClaims(self.page.claims[prop_id])
-				
+		
 				elif choice > '3':
 					print("Invalid choice.\n")
 					return 1
@@ -368,7 +375,8 @@ class WdPage:
 				if int(date.split('-')[0]) == now.year and int(date.split('-')[1]) > now.month:
 					check_ok = False
 			except:
-				null = 0
+				print("Invalid date.\n")
+				pass
 
 			if check_ok:
 				try:
@@ -396,13 +404,13 @@ class WdPage:
 							# print("Qualifier added.")
 
 				except:
-					print('Error in adding numeric value.')
+					print('Error in adding numeric value.\n')
 		return 0
-		
+
 	def checkClaimExistence(self, claim=''):
 		"""
 		Checks if a claim exists in Wikidata already
-	
+
 		@param claim: property and it's value to which this associated with
 
 		"""
@@ -446,7 +454,7 @@ class WdPage:
 	def addImportedFrom(self, repo=repo, prop_id='', prop_value='', claim='', lang='', status=0):
 		"""
 		Adds a reference/source
-	
+
 		@param repo:
 		@param prop_id: ID of the property
 		@param prop_val: ID of value associated with property
@@ -482,7 +490,7 @@ class WdPage:
 	def addQualifiers(self, repo=repo, prop_id='', prop_value='', claim='', qualifier_id='', qualval_id='', status=0):
 		"""
 		Adds a qualifier
-	
+
 		@param qualifier_id: ID of the qualifier
 		@param qualval_id: ID of the qualifier's value
 
@@ -512,22 +520,23 @@ class WdPage:
 		return 0
 
 
-# def main():
-# 	page_name = input('Name of article: ')
-# 	wd_value = 'Q4115189'
-# 	wp_page = ''
-# 	wd_page = ''
+def main():
+	page_name = input('Name of article: ')
+	wd_value = 'Q4115189'
+	wp_page = ''
+	wd_page = ''
 
-# 	# Test for Wikipedia page
-# 	try:
-# 		wp_page = WpPage(page_name)
-# 		print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
-# 	except:
-# 		("Page does not exist.\n")
-# 		return 1
+	# Test for Wikipedia page
+	try:
+		wp_page = WpPage(page_name)
+		# print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
+	except:
+		("Page does not exist.\n")
+		return 1
 
-	# if wp_page:
-	# 	wp_page.printWpContents()
+	if wp_page:
+		# wp_page.printWpContents()
+		wp_page.find_infobox()
 
 	# # Test for Wikidata page
 	# try:
@@ -535,7 +544,7 @@ class WdPage:
 	# except:
 	# 	("Page does not exist.\n")
 	# 	return 1
-		
+	
 	# if wd_page:
 		# wd_page.printWdContents()
 		# wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
@@ -548,6 +557,6 @@ class WdPage:
 		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
 
 # 	return 0
-		
-# if __name__ == "__main__":
-# 	main()
+	
+if __name__ == "__main__":
+	main()
