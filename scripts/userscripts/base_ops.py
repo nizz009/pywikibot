@@ -1,16 +1,16 @@
-# import json
+import json
 # import os
-# import re
+import re
 # import string
 # import sys
-import _thread
+# import _thread
 import time
 # import unicodedata
 import urllib
 import urllib.request
 import urllib.parse
+import datetime
 # import dateparser
-# import datetime
 
 import pywikibot
 from pywikibot import pagegenerators
@@ -90,7 +90,7 @@ class WpPage:
 				# get page for each Qval in search result
 				itemfound = pywikibot.ItemPage(repo, q_value)
 				item_dict = itemfound.get()
-	
+
 				prop_count = 0
 				flag = 0
 				# check for each property criteria provided
@@ -260,7 +260,7 @@ class WdPage:
 
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
-	
+
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
@@ -312,7 +312,7 @@ class WdPage:
 
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
-	
+
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
@@ -527,34 +527,37 @@ def main():
 	wd_page = ''
 
 	# Test for Wikipedia page
+	# try:
+	# 	wp_page = WpPage(page_name)
+	# 	print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
+	# 	print('\n')
+	# except:
+	# 	('Page does not exist.\n')
+	# 	return 1
+
+	# if wp_page:
+	# 	wp_page.printWpContents()
+	# 	print('\n')
+	# wp_page.find_infobox()
+	# 	print('\n')
+
+	# # Test for Wikidata page
 	try:
-		wp_page = WpPage(page_name)
-		# print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
+		wd_page = WdPage(wd_value)
 	except:
 		("Page does not exist.\n")
 		return 1
 
-	if wp_page:
-		# wp_page.printWpContents()
-		wp_page.find_infobox()
-
-	# # Test for Wikidata page
-	# try:
-	# 	wd_page = WdPage(wd_value)
-	# except:
-	# 	("Page does not exist.\n")
-	# 	return 1
-	
-	# if wd_page:
-		# wd_page.printWdContents()
-		# wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
-		# wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
-		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
-		# wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
-		# wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
+	if wd_page:
+		wd_page.printWdContents()
+		wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
+		wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
+		wd_page.addNumeric(prop_id='P1104', prop_value=123)
+		wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
+		wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
 
 		# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
-		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
+		wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
 
 # 	return 0
 	
