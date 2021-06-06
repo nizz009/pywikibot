@@ -527,18 +527,18 @@ def main():
 	wd_page = ''
 
 	# Test for Wikipedia page
-	# try:
-	# 	wp_page = WpPage(page_name)
+	try:
+		wp_page = WpPage(page_name)
 	# 	print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
 	# 	print('\n')
-	# except:
-	# 	('Page does not exist.\n')
-	# 	return 1
+	except:
+		('Page does not exist.\n')
+		return 1
 
-	# if wp_page:
+	if wp_page:
 	# 	wp_page.printWpContents()
 	# 	print('\n')
-	# wp_page.find_infobox()
+		wp_page.find_infobox()
 	# 	print('\n')
 
 	# # Test for Wikidata page
@@ -561,5 +561,5 @@ def main():
 
 # 	return 0
 	
-# if __name__ == "__main__":
-# 	main()
+if __name__ == "__main__":
+	main()

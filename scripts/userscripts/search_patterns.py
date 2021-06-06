@@ -49,7 +49,7 @@ def search_infobox_value(page_text='', word=''):
 		return 1
 
 	try:
-		found_items = re.findall(r'\|\s*%s\s+\=\s*\s*([\w\s]+[^\n\}\|]+)' % word, page_text, re.IGNORECASE)
+		found_items = re.findall(r'\|\s{1,}%s\s+\=\s*\s*([\w\s]+[^\n\}\|]+)' % word, page_text, re.IGNORECASE)
 		# print(found_items)
 		if found_items:
 			item_list = indiv_val(found_items)
@@ -60,7 +60,7 @@ def search_infobox_value(page_text='', word=''):
 	return 0
 
 def infobox(page_text='', word=''):
-	# print(page_text)
+	print(page_text)
 	if not page_text:
 		print('No text is present.\n')
 		return 1
