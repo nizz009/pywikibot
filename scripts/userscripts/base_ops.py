@@ -58,6 +58,10 @@ class WpPage:
 			self.page_name = page_name
 			self.page = pywikibot.Page(enwp, page_name)
 
+	def getWpContents(self):
+		""" Returns contents of a Wikidata page """
+		return self.page.text
+
 	def printWpContents(self):
 		""" Prints contents of a Wikipedia page """
 
@@ -133,22 +137,26 @@ class WpPage:
 
 		return None
 
-	def find_infobox(self):
+	def findInfobox(self):
 		if self.page:
-			search_patterns.infobox(self.page.text)
+			text = (self.page.text).split('==')
+			result = search_patterns.infobox(text[0])
+			# search_patterns.infobox(self.page.text)
+			return result
 		else:
 			print('No page exists.')
-			return 1
+			return None
 
 
 # deals with Wikidata articles
 class WdPage:
 
-	def __init__(self, wd_value='', wdpage=''):
+	def __init__(self, wd_value='', page_name=''):
 		if wd_value:
 			self.page = pywikibot.ItemPage(enwd, wd_value)
-		elif wdpage:
-			self.page = pywikibot.ItemPage.fromPage(wdpage)
+		elif page_name:
+			wp_page = WpPage(page_name)
+			self.page = pywikibot.ItemPage.fromPage(wp_page.page)
 
 		self.wd_value = self.page.title()
 
@@ -520,25 +528,25 @@ class WdPage:
 		return 0
 
 
-def main():
-	page_name = input('Name of article: ')
-	wd_value = 'Q4115189'
-	wp_page = ''
-	wd_page = ''
+# def main():
+# 	page_name = input('Name of article: ')
+# 	wd_value = 'Q4115189'
+# 	wp_page = ''
+# 	wd_page = ''
 
-	# Test for Wikipedia page
-	try:
-		wp_page = WpPage(page_name)
+	# # Test for Wikipedia page
+	# try:
+	# 	wp_page = WpPage(page_name)
 	# 	print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
 	# 	print('\n')
-	except:
-		('Page does not exist.\n')
-		return 1
+	# except:
+	# 	('Page does not exist.\n')
+	# 	return 1
 
-	if wp_page:
+	# if wp_page:
 	# 	wp_page.printWpContents()
 	# 	print('\n')
-		wp_page.find_infobox()
+		# wp_page.find_infobox()
 	# 	print('\n')
 
 	# # Test for Wikidata page
@@ -561,5 +569,5 @@ def main():
 
 # 	return 0
 	
-if __name__ == "__main__":
-	main()
+# if __name__ == "__main__":
+# 	main()
