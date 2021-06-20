@@ -20,7 +20,11 @@ enwiki = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
 repo = enwd.data_repository()
 
+prop_id = 'P2369'
+
 def searchPlayer(player_name=''):
+	""" Searches for the player in the official site """
+
 	if player_name:
 		player_name = player_name.replace(' ', '+')
 		searchitemurl = 'https://int.soccerway.com/search/players/?q=%s' % (player_name)
@@ -35,9 +39,10 @@ def searchPlayer(player_name=''):
 		i = 0
 		for name in names:
 			flag = 'y'
-			name = unidecode(name).split()
+			name = unidecode(name)
+			name = re.split(r'\s|\-', name)
 			# print(name)
-			name_parts = player_name.split()
+			name_parts = re.split(r'\s|\-', player_name)
 			# print(name_parts)
 
 			for name_part in name_parts:
@@ -57,6 +62,8 @@ def searchPlayer(player_name=''):
 	return ''
 
 def getId(player_name=''):
+	""" Gets the player ID from the official site """
+
 	if player_name:
 		text = ''
 		text = searchPlayer(player_name=player_name)
@@ -77,6 +84,13 @@ def getId(player_name=''):
 	return ''
 
 def checkAuthenticity(page='', soccerway_id=''):
+	""" 
+	Checks the correctness of the ID in Wp article and official site 
+
+	@param page: Wikipedia page
+	@param soccerway_id: ID retrieved from Wp article
+
+	"""
 	if page and soccerway_id:
 		first_name = ''
 		last_name = ''
@@ -111,10 +125,15 @@ def checkAuthenticity(page='', soccerway_id=''):
 		print('Inadequate information provided.\n')
 		return False
 
-def addSoccerwayId(repo='', wikisite='', item='', page='', lang=''):
-	print('\n')
+def addSoccerwayId(repo='', item='', lang='', soccerway_id=''):
+	""" Adds the ID in Wikidata """
+
+	# item_1 = base.WdPage(wd_value='Q4115189')
+	# item_1.printWdContents()
+	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id)
 
 def findId(page=''):
+	""" Finds the ID in Wp page """
 	if page:
 		m = re.findall(r'{{soccerway\s*\|([A-Za-zÀ-ÖØ-öø-ÿ\-]+\/\d+)', page.text, re.IGNORECASE)
 		if m:
@@ -134,82 +153,72 @@ def main():
 	gen = pagegenerators.CategorizedPageGenerator(cat)
 	pre = pagegenerators.PreloadingGenerator(gen)
 
-	# searchitemurl = 'https://www.wtatennis.com/search?term=Nora%20Baj%C4%8D%C3%ADkov%C3%A1'
-	# raw = base.getURL(searchitemurl)
-	# print(raw)
-
 	# looping through pages of articles
-	i = 0
+	# i = 0
 	for page in pre:
-		# if page.title() == 'Amine Abbès':
+
 		print(page.title())
-		# print(page.text)
 
 		item = ''
 		try:
-			item = pywikibot.ItemPage.fromPage(page)
+			item = base.WdPage(page_name=page.title())
 		except:
 			pass
-
-		# player_name = unidecode('Andrey Soto')
-		# # print(player_name)
-		# print(getId(player_name=player_name))
-		# # print(checkAuthenticity(page=page, soccerway_id='-/449795/'))
-		# break
 
 		# print(findId(page))
 		# print('\n')
 
-		soccerway_id = ''
+		soccerway_id = findId(page=page)
+		soccerway_id = unidecode(soccerway_id)
 		if item:
-			if (datetime.datetime.now()-item.editTime()).seconds < 120:
-				print('... but is being edited')
-			else:
-				soccerway_id = findId(page=page)
-				soccerway_id = unidecode(soccerway_id)
-				if soccerway_id:
-					if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
-						print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
-						soccerway_id = getId(unidecode(page.title()))
-				else:
+			if soccerway_id:
+				if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
+					print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
 					soccerway_id = getId(unidecode(page.title()))
+			else:
+				soccerway_id = getId(unidecode(page.title()))
 
-				print(soccerway_id)
-				addSoccerwayId(repo=repo, wikisite=enwiki, item=item, page=page, lang=lang)
+			print(soccerway_id)
+			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
 
-		if i < 100:
-			i += 1
 		else:
-			break
-
-		# else:
-		# 	# if no item exists, search for a valid item
-		# 	page_title = page.title()
-		# 	page_title_ = page_title.split('(')[0].strip()
-		# 	searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
-		# 	raw = getURL(searchitemurl)
+			# if no item exists, search for a valid item
+			page_title = page.title()
+			page_title_ = page_title.split('(')[0].strip()
+			searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
+			raw = base.getURL(searchitemurl)
 			
-		# 	# check for valid search result
-		# 	if not '<search />' in raw:
-		# 		m = re.findall(r'id="(Q\d+)"', raw)
+			# check for valid search result
+			if not '<search />' in raw:
+				m = re.findall(r'id="(Q\d+)"', raw)
 
-		# 		for itemfoundq in m:
-		# 			itemfound = pywikibot.ItemPage(repo, itemfoundq)
-		# 			item_dict = itemfound.get()
+				for itemfoundq in m:
+					itemfound = pywikibot.ItemPage(repo, itemfoundq)
+					item_dict = itemfound.get()
 
-		# 			if page.title() == item_dict['labels']['en']:
-		# 				if checkAuthenticity(page=page):
-		# 					addSoccerwayId(repo=repo, wikisite=enwiki, item=item, page=page, lang=lang)
-		# 				else:
-		# 					print('Incorrect ATP ID provided.\n')
-		# 					continue
+					if page.title() == item_dict['labels']['en']:
+						if soccerway_id:
+							if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
+								print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
+								soccerway_id = getId(unidecode(page.title()))
+						else:
+							soccerway_id = getId(unidecode(page.title()))
 
-		# 				# Touch the page to force an update
-		# 				try:
-		# 					page.touch()
-		# 				except:
-		# 					null = 0
-		# 				break
+						print(soccerway_id)
+						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+
+						# Touch the page to force an update
+						try:
+							page.touch()
+						except:
+							print('Error in updating the page.\n')
+						break
+
+		# if i >= 100:
+		# 	break
+		# else:
+		# 	i += 1
+
 	return 0
 
 if __name__ == "__main__":

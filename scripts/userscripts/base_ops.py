@@ -216,7 +216,7 @@ class WdPage:
 			elif choice == '2':
 				self.page.removeClaims(self.page.claims[prop_id])
 		
-		elif choice > '3':
+			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
 	
@@ -327,9 +327,9 @@ class WdPage:
 
 		try:
 			new_prop = pywikibot.Claim(repo, prop_id)
-			print('hello')
+			# print('hello')
 			new_prop.setTarget(val)
-			print(val)
+			# print(val)
 
 			# confirmation
 			print(new_prop)
@@ -413,6 +413,58 @@ class WdPage:
 
 				except:
 					print('Error in adding numeric value.\n')
+		return 0
+
+
+	def addIdentifiers(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id=''):
+		""" Adds numeric values to Wikidata """
+
+		print(self.page.title())
+
+		if not prop_value:
+			print('Incorrect property value provided.\n')
+			return 1
+
+		self.page.get()
+		if prop_id in self.page.claims:
+			choice = input('Property already exists. Select:\n\
+				1 to skip\n\
+				2 to over-write the existing property\n\
+				3 to add another value to the property\n')
+
+			if choice == '1':
+				return
+
+			elif choice == '2':
+				self.page.removeClaims(self.page.claims[prop_id])
+
+			elif choice > '3':
+				print("Invalid choice.\n")
+				return 1
+
+		try:
+			new_prop = pywikibot.Claim(repo, prop_id)
+			# print('hello')
+			new_prop.setTarget(prop_value)
+			# print(val)
+
+			# confirmation
+			print(new_prop)
+			text = input("Do you want to save this property? (y/n) ")
+			if text == 'y':
+				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
+
+		except:
+			print('Error in adding numeric value.')
+
 		return 0
 
 	def checkClaimExistence(self, claim=''):
