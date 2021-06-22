@@ -114,7 +114,7 @@ def search_infobox_value(page_text='', word=''):
 
 	return 0
 
-def infobox(page_text='', word=''):
+def infobox(page_text='', word='', check_all=''):
 	# print(page_text)
 	if not page_text:
 		print('No text is present.\n')
@@ -125,20 +125,22 @@ def infobox(page_text='', word=''):
 	else:
 		properties = search_infobox_prop(page_text=page_text)
 		print('Found ' + str(len(properties)) + ' properties.\n')
-		print('Select the index of the property to check. (Leave blank for all properties and 0 for none.)\n')
-
-		index = 1
-		for prop in properties:
-			print(str(index) + ' ' + str(prop))
-			index += 1
-		# print('\n')
-
 		indices = list()
-		try:
-			while True:
-				indices.append(int(input()))
-		except:
-			pass
+
+		if check_all.lower() != 'y':
+			print('Select the index of the property to check. (Leave blank for all properties and 0 for none.)\n')
+
+			index = 1
+			for prop in properties:
+				print(str(index) + ' ' + str(prop))
+				index += 1
+			# print('\n')
+
+			try:
+				while True:
+					indices.append(int(input()))
+			except:
+				pass
 
 		propval_pair = dict()
 		if indices:

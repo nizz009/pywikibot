@@ -20,29 +20,28 @@ enwiki = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
 repo = enwd.data_repository()
 
-prop_id = 'P2369'
+prop_id = 'P597'
 
 def searchPlayer(player_name=''):
 	""" Searches for the player in the official site """
 
 	if player_name:
-		player_name = player_name.replace(' ', '+')
-		searchitemurl = 'https://int.soccerway.com/search/players/?q=%s' % (player_name)
-		raw = base.getURL(searchitemurl)
-		# print(raw)
-		players = re.findall(r'<td class="player"><a href="[\/\-\w]*" class="[\_\s\/\-\w]*">.*</a></td>', raw, re.IGNORECASE)
-		names = re.findall(r'<td class="player"><a href="[\/\-\w]*" class="[\_\s\/\-\w]*">(.*)</a></td>', raw, re.IGNORECASE)
-		# print(names)
-		# print(players)
+		name_parts = re.split(r'\s|\-', player_name)
 
-		player_name = player_name.replace('+', ' ')
+		searchitemurl = 'http://www.wtatennis.com/search?term=%s' % (name_parts[0])
+		raw = base.getURL(searchitemurl)
+		print(raw)
+		players = re.findall(r'<a class="match-table">', raw, re.IGNORECASE)
+		names = re.findall(r'<a class="match-table__player match-table__player--link" title="([\s\w])" href="[\/\-\w]">', raw, re.IGNORECASE)
+		print(names)
+		print(players)
+
 		i = 0
 		for name in names:
 			flag = 'y'
 			name = unidecode(name)
 			name = re.split(r'\s|\-', name)
 			# print(name)
-			name_parts = re.split(r'\s|\-', player_name)
 			# print(name_parts)
 
 			for name_part in name_parts:
@@ -69,9 +68,9 @@ def getId(player_name=''):
 		text = searchPlayer(player_name=player_name)
 
 		if text:
-			soccerway_id = re.findall(r'<td class="player"><a href="/players/([\/\-\w]*)" class="[\_\s\/\-\w]*">.*</a></td>', text, re.IGNORECASE)
-			soccerway_id = soccerway_id[0].strip('/')
-			return soccerway_id
+			wta_id = re.findall(r'<td class="player"><a href="/players/([\/\-\w]*)" class="[\_\s\/\-\w]*">.*</a></td>', text, re.IGNORECASE)
+			wta_id = wta_id[0].strip('/')
+			return wta_id
 
 		else:
 			print('No player was found on the official site.\n')
@@ -83,19 +82,19 @@ def getId(player_name=''):
 
 	return ''
 
-def checkAuthenticity(page='', soccerway_id=''):
+def checkAuthenticity(page='', wta_id=''):
 	""" 
 	Checks the correctness of the ID in Wp article and official site 
 
 	@param page: Wikipedia page
-	@param soccerway_id: ID retrieved from Wp article
+	@param wta_id: ID retrieved from Wp article
 
 	"""
-	if page and soccerway_id:
+	if page and wta_id:
 		first_name = ''
 		last_name = ''
 
-		searchitemurl = 'https://int.soccerway.com/players/%s' % (soccerway_id)
+		searchitemurl = 'https://int.wta.com/players/%s' % (wta_id)
 		raw = base.getURL(searchitemurl)
 		first_name = re.findall(r'<dd data-first_name="first_name">(.*)</dd>', raw, re.IGNORECASE)
 		last_name = re.findall(r'<dd data-last_name="last_name">(.*)</dd>', raw, re.IGNORECASE)
@@ -125,20 +124,20 @@ def checkAuthenticity(page='', soccerway_id=''):
 		print('Inadequate information provided.\n')
 		return False
 
-def addSoccerwayId(repo='', item='', lang='', soccerway_id=''):
+def addWtaId(repo='', item='', lang='', wta_id=''):
 	""" Adds the ID in Wikidata """
 
 	# item_1 = base.WdPage(wd_value='Q4115189')
 	# item_1.printWdContents()
-	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id)
+	item.addIdentifiers(prop_id=prop_id, prop_value=wta_id)
 
 def findId(page=''):
 	""" Finds the ID in Wp page """
 	if page:
-		m = re.findall(r'{{soccerway\s*\|([A-Za-zÀ-ÖØ-öø-ÿ\-]+\/\d+)', page.text, re.IGNORECASE)
+		m = re.findall(r'{{WTA\s*\|(\d+\/[A-Za-zÀ-ÖØ-öø-ÿ\-]+)', page.text, re.IGNORECASE)
 		if m:
 			return m[0]
-		m = re.findall(r'{{soccerway\s*\|id=([A-Za-zÀ-ÖØ-öø-ÿ\-]+\/\d+)', page.text, re.IGNORECASE)
+		m = re.findall(r'{{WTA\s*\|id=(\d+\/[A-Za-zÀ-ÖØ-öø-ÿ\-]+)', page.text, re.IGNORECASE)
 		if m:
 			return m[0]
 	else:
@@ -146,18 +145,23 @@ def findId(page=''):
 	return ''
 
 def main():
-	category = 'Soccerway template with ID not in Wikidata'
+	category = 'WTA template with ID not in Wikidata'
 	lang = 'en'
 
 	cat = pywikibot.Category(pywikibot.Link(category, source=enwiki, default_namespace=14))
 	gen = pagegenerators.CategorizedPageGenerator(cat)
 	pre = pagegenerators.PreloadingGenerator(gen)
 
-	# looping through pages of articles
-	# i = 0
-	for page in pre:
+	# searchitemurl = 'https://www.wtatennis.com/search?term=Nora%20Baj%C4%8D%C3%ADkov%C3%A1'
+	# raw = base.getURL(searchitemurl)
+	# print(raw)
 
+	# looping through pages of articles
+	i = 0
+	for page in pre:
+		# if page.title() == 'Amine Abbès':
 		print(page.title())
+		# print(page.text)
 
 		item = ''
 		try:
@@ -165,63 +169,65 @@ def main():
 		except:
 			pass
 
+		player_name = unidecode('Amélie Mauresmo')
+		# print(player_name)
+		print(searchPlayer(player_name=player_name))
+		# print(checkAuthenticity(page=page, wta_id='-/449795/'))
+		break
+
 		# print(findId(page))
 		# print('\n')
 
-		soccerway_id = findId(page=page)
-		soccerway_id = unidecode(soccerway_id)
+		wta_id = findId(page=page)
+		wta_id = unidecode(wta_id)
 		if item:
-			if soccerway_id:
-				if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
-					print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
-					soccerway_id = getId(unidecode(page.title()))
+			if wta_id:
+				if not checkAuthenticity(page=page, wta_id=wta_id):
+					print('Incorrect WTA ID provided in the article. Getting ID from site...\n')
+					wta_id = getId(unidecode(page.title()))
 			else:
-				soccerway_id = getId(unidecode(page.title()))
+				wta_id = getId(unidecode(page.title()))
 
-			print(soccerway_id)
-			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+			print(wta_id)
+			addWtaId(repo=repo, item=item, lang=lang, wta_id=wta_id)
 
+		if i < 1:
+			i += 1
 		else:
-			# if no item exists, search for a valid item
-			page_title = page.title()
-			page_title_ = page_title.split('(')[0].strip()
-			searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
-			raw = base.getURL(searchitemurl)
-			
-			# check for valid search result
-			if not '<search />' in raw:
-				m = re.findall(r'id="(Q\d+)"', raw)
+			break
 
-				for itemfoundq in m:
-					itemfound = pywikibot.ItemPage(repo, itemfoundq)
-					item_dict = itemfound.get()
-
-					if page.title() == item_dict['labels']['en']:
-						if soccerway_id:
-							if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
-								print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
-								soccerway_id = getId(unidecode(page.title()))
-						else:
-							soccerway_id = getId(unidecode(page.title()))
-
-						print(soccerway_id)
-						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
-
-						# Touch the page to force an update
-						try:
-							page.touch()
-						except:
-							print('Error in updating the page.\n')
-						break
-
-				else:
-					print('No item page exists.\n')
-
-		# if i >= 100:
-		# 	break
 		# else:
-		# 	i += 1
+		# 	# if no item exists, search for a valid item
+		# 	page_title = page.title()
+		# 	page_title_ = page_title.split('(')[0].strip()
+		# 	searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
+		# 	raw = base.getURL(searchitemurl)
+			
+		# 	# check for valid search result
+		# 	if not '<search />' in raw:
+		# 		m = re.findall(r'id="(Q\d+)"', raw)
 
+		# 		for itemfoundq in m:
+		# 			itemfound = pywikibot.ItemPage(repo, itemfoundq)
+		# 			item_dict = itemfound.get()
+
+		# 			if page.title() == item_dict['labels']['en']:
+		# 				if wta_id:
+		# 					if not checkAuthenticity(page=page, wta_id=wta_id):
+		# 						print('Incorrect WTA ID provided in the article. Getting ID from site...\n')
+		# 						wta_id = getId(unidecode(page.title()))
+		# 				else:
+		# 					wta_id = getId(unidecode(page.title()))
+
+		# 				print(wta_id)
+		# 				addWtaId(repo=repo, item=item, lang=lang, wta_id=wta_id)
+
+		# 				# Touch the page to force an update
+		# 				try:
+		# 					page.touch()
+		# 				except:
+		# 					null = 0
+		# 				break
 	return 0
 
 if __name__ == "__main__":
