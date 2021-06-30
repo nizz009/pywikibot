@@ -152,7 +152,9 @@ class WpPage:
 
 	def findInfobox(self, check_all=''):
 		if self.page:
-			text = (self.page.text).split('==')
+			text_screened = re.findall(r'\{\{Infobox .*[\n]*', self.page.text, re.DOTALL)
+			text = text_screened[0].split('==')
+			text = text[0].split('\n}}')
 			result = search_patterns.infobox(page_text=text[0], check_all=check_all)
 			# search_patterns.infobox(self.page.text)
 			return result
@@ -688,26 +690,26 @@ class WdPage:
 		return 0
 
 
-# def main():
-# 	page_name = input('Name of article: ')
+def main():
+	page_name = input('Name of article: ')
 # 	wd_value = 'Q4115189'
 # 	wp_page = ''
 # 	wd_page = ''
 
 	# # Test for Wikipedia page
-	# try:
-	# 	wp_page = WpPage(page_name)
+	try:
+		wp_page = WpPage(page_name)
 	# 	print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
 	# 	print('\n')
-	# except:
-	# 	('Page does not exist.\n')
-	# 	return 1
+	except:
+		('Page does not exist.\n')
+		return 1
 
-	# if wp_page:
-	# 	wp_page.printWpContents()
-	# 	print('\n')
-		# wp_page.find_infobox()
-	# 	print('\n')
+	if wp_page:
+		# wp_page.printWpContents()
+		# print('\n')
+		wp_page.findInfobox()
+		print('\n')
 
 	# # Test for Wikidata page
 	# try:
@@ -729,5 +731,5 @@ class WdPage:
 
 # 	return 0
 	
-# if __name__ == "__main__":
-# 	main()
+if __name__ == "__main__":
+	main()

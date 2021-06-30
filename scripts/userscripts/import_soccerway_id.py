@@ -1,19 +1,13 @@
 import json
-import os
 import re
-import sys
-import _thread
-import time
-import unicodedata
 import urllib
 import urllib.request
 import urllib.parse
-import dateparser
-import datetime
 from unidecode import unidecode
 
 import pywikibot
 from pywikibot import pagegenerators
+# link to base_ops: https://github.com/nizz009/pywikibot/blob/master/scripts/userscripts/base_ops.py
 import base_ops as base
 
 enwiki = pywikibot.Site('en', 'wikipedia')
@@ -85,7 +79,8 @@ def getId(player_name=''):
 
 def checkAuthenticity(page='', soccerway_id=''):
 	""" 
-	Checks the correctness of the ID in Wp article and official site 
+	Checks the correctness of the ID in Wp article 
+	Compares the ID in Wp article with that in the official site 
 
 	@param page: Wikipedia page
 	@param soccerway_id: ID retrieved from Wp article
@@ -179,7 +174,7 @@ def main():
 				soccerway_id = getId(unidecode(page.title()))
 
 			print(soccerway_id)
-			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+			# addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
 
 		else:
 			# if no item exists, search for a valid item
@@ -205,7 +200,7 @@ def main():
 							soccerway_id = getId(unidecode(page.title()))
 
 						print(soccerway_id)
-						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+						# addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
 
 						# Touch the page to force an update
 						try:

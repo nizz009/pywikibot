@@ -11,15 +11,23 @@ def indiv_val(code='', found_items=''):
 	@param found_items: list of found values
 
 	"""
-
+	# print(found_items)
 	if code == 1:
-		values = found_items[0].split('[[')
-		# print(values)
 		items = list()
-		for value in values:
-			item = re.findall(r'[&\w\s]+[^\[\],][&\w\s\|\(\)\-\,]+', value)
-			if item:
-				items.append(item[0])
+		for found_item in found_items:
+			found_item = found_item.replace('[', '').replace(']', '').replace('\'', '')
+			found_item = found_item.split('<br>')
+			for item in found_item:
+				items.append(item)
+			# print(item)
+			# print('\n')
+
+		# # print(values)
+		# items = list()
+		# for value in values:
+		# 	item = re.findall(r'[&\w\s]+[^\[\],][&\w\s\|\(\)\-\,]+', value)
+		# 	if item:
+		# 		items.append(item[0])
 		return items
 
 	elif code == 2:
@@ -54,10 +62,10 @@ def date_val(page_text='', word=''):
 		return 1
 
 	try:
-		m = re.findall(r'\|\s*%s\s+\=\s*{{[\w\s]*\|\s*(\d+)\|(\d+)\|(\d+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
+		m = re.findall(r'\|\s*%s\s*\=\s*{{[\w\s]*\|\s*(\d+)\|(\d+)\|(\d+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
 		return indiv_val(code=2, found_items=m)
 
-		m = re.findall(r'\|\s*%s\s+\=\s*([A-Z0-9a-z\s]+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
+		m = re.findall(r'\|\s*%s\s*\=\s*([A-Z0-9a-z\s]+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
 		if m:
 			m[0] = m[0].split()
 			return indiv_val(code=2, found_items=m[0])
@@ -84,10 +92,10 @@ def search_infobox_prop(page_text=''):
 		return 1
 
 	try:
-		found_items = re.findall(r'\|\s*([A-Z_]+)\s+\=\s*', page_text, re.IGNORECASE)
+		found_items = re.findall(r'\|\s*([A-Z_]{3,})\s*\=\s*', page_text, re.IGNORECASE)
 		return found_items
 	except:
-			print('Error in retrieving information for author')
+		print('Error in retrieving information for author')
 
 	return 0
 
@@ -103,19 +111,19 @@ def search_infobox_value(page_text='', word=''):
 		print('No text is available.')
 		return 1
 
-	try:
-		found_items = re.findall(r'\|\s{1,}%s\s+\=\s*\s*([\w\s]{1,}[^\n\}<\|]{1,})' % word, page_text, re.IGNORECASE)
-		# print(found_items)
-		if found_items:
-			item_list = indiv_val(code=1, found_items=found_items)
-			return item_list
-	except:
-			print('Error in retrieving information for %s' % word)
+	# try:
+	found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,})' % word, page_text, re.IGNORECASE)
+	# print(found_items)
+	if found_items:
+		item_list = indiv_val(code=1, found_items=found_items)
+		return item_list
+	# except:
+	# 	print('Error in retrieving information for %s' % word)
 
 	return 0
 
 def infobox(page_text='', word='', check_all=''):
-	# print(page_text)
+	print(page_text)
 	if not page_text:
 		print('No text is present.\n')
 		return None
@@ -144,7 +152,7 @@ def infobox(page_text='', word='', check_all=''):
 
 		propval_pair = dict()
 		if indices:
-			if indices[0] == 0:
+			if 0 in indices:
 				print('Exiting...')
 				return None
 			for index in indices:
@@ -173,6 +181,9 @@ def infobox(page_text='', word='', check_all=''):
 						propval_pair[str(prop)] = str(value)
 				except:
 					print('No corresponding value for ' + str(prop) + ' exists. Skipping...')
+
+		for prop in propval_pair:
+			print(str(prop) + " : " + propval_pair[prop])
 
 		print('\n')
 
