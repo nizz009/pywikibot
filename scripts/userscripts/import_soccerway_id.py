@@ -120,12 +120,29 @@ def checkAuthenticity(page='', soccerway_id=''):
 		print('Inadequate information provided.\n')
 		return False
 
+def checkDuplicate(soccerway_id=''):
+	query = 'SELECT ?item WHERE { ?item wdt:'+ str(prop_id) +' ?id . FILTER (?id = "'+ str(soccerway_id) +'") . } LIMIT 10'
+	generator = pagegenerators.WikidataSPARQLPageGenerator(query, site=repo)
+	count = 0
+	for things in generator:
+		count += 1
+
+	if count:
+		return True
+	
+	return False
+
 def addSoccerwayId(repo='', item='', lang='', soccerway_id=''):
 	""" Adds the ID in Wikidata """
 
 	# item_1 = base.WdPage(wd_value='Q4115189')
 	# item_1.printWdContents()
+	if checkDuplicate(soccerway_id):
+		print('ID is already in use in another page. Skipping...')
+		return 1
+
 	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id)
+	return 0
 
 def findId(page=''):
 	""" Finds the ID in Wp page """
