@@ -2,7 +2,7 @@ import re
 import datetime
 import dateparser
 
-def indiv_val(code='', found_items=''):
+def val_parser(code='', found_items=''):
 	""" 
 	"Refines" the data to remove unwanted text 
 	@param code: 1 for properties other than date
@@ -63,12 +63,12 @@ def date_val(page_text='', word=''):
 
 	try:
 		m = re.findall(r'\|\s*%s\s*\=\s*{{[\w\s]*\|\s*(\d+)\|(\d+)\|(\d+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
-		return indiv_val(code=2, found_items=m)
+		return val_parser(code=2, found_items=m)
 
 		m = re.findall(r'\|\s*%s\s*\=\s*([A-Z0-9a-z\s]+)' % word, page_text.replace('|df=yes','').replace('|df=y','').replace(',','').replace('[','').replace(']',''), re.IGNORECASE)
 		if m:
 			m[0] = m[0].split()
-			return indiv_val(code=2, found_items=m[0])
+			return val_parser(code=2, found_items=m[0])
 
 	except:
 		print('Error in retrieving information for %s date.' % word)
@@ -115,7 +115,7 @@ def search_infobox_value(page_text='', word=''):
 	found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,})' % word, page_text, re.IGNORECASE)
 	# print(found_items)
 	if found_items:
-		item_list = indiv_val(code=1, found_items=found_items)
+		item_list = val_parser(code=1, found_items=found_items)
 		return item_list
 	# except:
 	# 	print('Error in retrieving information for %s' % word)

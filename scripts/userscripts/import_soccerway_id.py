@@ -9,6 +9,8 @@ import pywikibot
 from pywikibot import pagegenerators
 # link to base_ops: https://github.com/nizz009/pywikibot/blob/master/scripts/userscripts/base_ops.py
 import base_ops as base
+# link to search_patterns: https://github.com/nizz009/pywikibot/blob/master/scripts/userscripts/search_patterns.py
+import search_patterns
 
 enwiki = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
@@ -16,32 +18,28 @@ repo = enwd.data_repository()
 
 prop_id = 'P2369'
 
-def searchPlayer(player_name=''):
+def searchPlayer(wp_page='', player_name=''):
 	""" Searches for the player in the official site """
 
 	if player_name:
 		player_name = player_name.replace(' ', '+')
 		searchitemurl = 'https://int.soccerway.com/search/players/?q=%s' % (player_name)
 		raw = base.getURL(searchitemurl)
-		# print(raw)
 		players = re.findall(r'<td class="player"><a href="[\/\-\w]*" class="[\_\s\/\-\w]*">.*</a></td>', raw, re.IGNORECASE)
 		names = re.findall(r'<td class="player"><a href="[\/\-\w]*" class="[\_\s\/\-\w]*">(.*)</a></td>', raw, re.IGNORECASE)
-		# print(names)
-		# print(players)
 
 		player_name = player_name.replace('+', ' ')
+		matches = list()
 		i = 0
 		for name in names:
 			flag = 'y'
 			name = unidecode(name)
 			name = re.split(r'\s|\-', name)
-			# print(name)
 			name_parts = re.split(r'\s|\-', player_name)
-			# print(name_parts)
 
 			for name_part in name_parts:
 				name_part = unidecode(name_part)
-				if name_part != 'career' or name_part != 'statistics' or '(' not in name_part or not name_part.isnumeric():
+				if name_part != 'career' and name_part != 'statistics' and '(' not in name_part and ')' not in name_part and not name_part.isnumeric():
 					if name_part not in name:
 						flag = 'n'
 						break
@@ -50,17 +48,34 @@ def searchPlayer(player_name=''):
 				i += 1
 				continue
 
-			text = players[i]
-			return text
+			matches.append(players[i])
+
+		if len(matches) == 1:
+			return matches[0]
+		elif len(matches) > 1:
+			for text in matches:
+				soccerway_id = re.findall(r'<td class="player"><a href="/players/([\/\-\w]*)" class="[\_\s\/\-\w]*">.*</a></td>', text, re.IGNORECASE)
+				
+				if soccerway_id:
+					searchitemurl = 'https://int.soccerway.com/players/%s' % (soccerway_id[0])
+					raw = base.getURL(searchitemurl)
+					
+					bday_site = re.findall(r'<dd data-date_of_birth="date_of_birth">([\w\s]*)</dd>', raw, re.IGNORECASE)
+					bday_site[0] = (bday_site[0].split())
+					bday_site = search_patterns.val_parser(code=2, found_items=bday_site)
+					bday_wp = search_patterns.date_val(page_text=wp_page.text, word='birth_date')
+				
+					if bday_site == bday_wp:
+						return text
 
 	return ''
 
-def getId(player_name=''):
+def getId(wp_page='', player_name=''):
 	""" Gets the player ID from the official site """
 
 	if player_name:
 		text = ''
-		text = searchPlayer(player_name=player_name)
+		text = searchPlayer(wp_page=wp_page, player_name=player_name)
 
 		if text:
 			soccerway_id = re.findall(r'<td class="player"><a href="/players/([\/\-\w]*)" class="[\_\s\/\-\w]*">.*</a></td>', text, re.IGNORECASE)
@@ -107,7 +122,7 @@ def checkAuthenticity(page='', soccerway_id=''):
 			count = 0
 			for name_part in name_parts:
 				name_part = unidecode(name_part)
-				if name_part != 'career' or name_part != 'statistics' or '(' not in name_part or not name_part.isnumeric():
+				if name_part != 'career' and name_part != 'statistics' and '(' not in name_part and ')' not in name_part and not name_part.isnumeric():
 					if name_part in first_name or name_part in last_name:
 						count += 1
 
@@ -129,10 +144,10 @@ def checkDuplicate(soccerway_id=''):
 
 	if count:
 		return True
-	
+
 	return False
 
-def addSoccerwayId(repo='', item='', lang='', soccerway_id=''):
+def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm=''):
 	""" Adds the ID in Wikidata """
 
 	# item_1 = base.WdPage(wd_value='Q4115189')
@@ -141,7 +156,7 @@ def addSoccerwayId(repo='', item='', lang='', soccerway_id=''):
 		print('ID is already in use in another page. Skipping...')
 		return 1
 
-	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id)
+	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, confirm=confirm)
 	return 0
 
 def findId(page=''):
@@ -166,7 +181,7 @@ def main():
 	pre = pagegenerators.PreloadingGenerator(gen)
 
 	# looping through pages of articles
-	# i = 0
+	i = 0
 	for page in pre:
 
 		print(page.title())
@@ -186,12 +201,12 @@ def main():
 			if soccerway_id:
 				if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
 					print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
-					soccerway_id = getId(unidecode(page.title()))
+					soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
 			else:
-				soccerway_id = getId(unidecode(page.title()))
+				soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
 
 			print(soccerway_id)
-			# addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y')
 
 		else:
 			# if no item exists, search for a valid item
@@ -212,12 +227,12 @@ def main():
 						if soccerway_id:
 							if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
 								print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
-								soccerway_id = getId(unidecode(page.title()))
+								soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
 						else:
-							soccerway_id = getId(unidecode(page.title()))
+							soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
 
 						print(soccerway_id)
-						# addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id)
+						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y')
 
 						# Touch the page to force an update
 						try:
@@ -229,10 +244,10 @@ def main():
 				else:
 					print('No item page exists.\n')
 
-		# if i >= 100:
-		# 	break
-		# else:
-		# 	i += 1
+		if i >= 55:
+			break
+		else:
+			i += 1
 
 	return 0
 
