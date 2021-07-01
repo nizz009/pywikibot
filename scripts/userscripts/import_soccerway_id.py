@@ -53,6 +53,7 @@ def searchPlayer(wp_page='', player_name=''):
 		if len(matches) == 1:
 			return matches[0]
 		elif len(matches) > 1:
+			final_list = list()
 			for text in matches:
 				soccerway_id = re.findall(r'<td class="player"><a href="/players/([\/\-\w]*)" class="[\_\s\/\-\w]*">.*</a></td>', text, re.IGNORECASE)
 				
@@ -66,7 +67,12 @@ def searchPlayer(wp_page='', player_name=''):
 					bday_wp = search_patterns.date_val(page_text=wp_page.text, word='birth_date')
 				
 					if bday_site == bday_wp:
-						return text
+						final_list.append(text)
+
+			if len(final_list) == 1:
+				return final_list[0]
+			else:
+				return ''
 
 	return ''
 
@@ -244,10 +250,10 @@ def main():
 				else:
 					print('No item page exists.\n')
 
-		if i >= 55:
-			break
-		else:
-			i += 1
+		# if i >= 55:
+		# 	break
+		# else:
+		# 	i += 1
 
 	return 0
 
