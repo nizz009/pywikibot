@@ -162,7 +162,7 @@ def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm=''):
 		print('ID is already in use in another page. Skipping...')
 		return 1
 
-	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, confirm=confirm)
+	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, lang=lang, confirm=confirm)
 	return 0
 
 def findId(page=''):
