@@ -153,7 +153,7 @@ def checkDuplicate(soccerway_id=''):
 
 	return False
 
-def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm=''):
+def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm='', import_from=''):
 	""" Adds the ID in Wikidata """
 
 	# item_1 = base.WdPage(wd_value='Q4115189')
@@ -162,7 +162,10 @@ def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm=''):
 		print('ID is already in use in another page. Skipping...')
 		return 1
 
-	item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, lang=lang, confirm=confirm)
+	if import_from == 'enwiki':
+		item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, lang=lang, confirm=confirm)
+	else:
+		item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, confirm=confirm)
 	return 0
 
 def findId(page=''):
@@ -203,16 +206,19 @@ def main():
 
 		soccerway_id = findId(page=page)
 		soccerway_id = unidecode(soccerway_id)
+		import_from = 'enwiki'
 		if item:
 			if soccerway_id:
 				if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
 					print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
 					soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
+					import_from = ''
 			else:
 				soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
+				import_from = ''
 
 			print(soccerway_id)
-			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y')
+			addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y', import_from=import_from)
 
 		else:
 			# if no item exists, search for a valid item
@@ -234,11 +240,13 @@ def main():
 							if not checkAuthenticity(page=page, soccerway_id=soccerway_id):
 								print('Incorrect Soccerway ID provided in the article. Getting ID from site...\n')
 								soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
+								import_from = ''
 						else:
 							soccerway_id = getId(wp_page=page, player_name=unidecode(page.title()))
+							import_from = ''
 
 						print(soccerway_id)
-						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y')
+						addSoccerwayId(repo=repo, item=item, lang=lang, soccerway_id=soccerway_id, confirm='y', import_from=import_from)
 
 						# Touch the page to force an update
 						try:
