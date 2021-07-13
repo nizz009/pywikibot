@@ -156,16 +156,16 @@ def checkDuplicate(soccerway_id=''):
 def addSoccerwayId(repo='', item='', lang='', soccerway_id='', confirm='', import_from=''):
 	""" Adds the ID in Wikidata """
 
-	# item_1 = base.WdPage(wd_value='Q4115189')
+	item_1 = base.WdPage(wd_value='Q4115189')
 	# item_1.printWdContents()
 	if checkDuplicate(soccerway_id):
 		print('ID is already in use in another page. Skipping...')
 		return 1
 
 	if import_from == 'enwiki':
-		item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, lang=lang, confirm=confirm)
+		item_1.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, lang=lang, confirm=confirm)
 	else:
-		item.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, confirm=confirm)
+		item_1.addIdentifiers(prop_id=prop_id, prop_value=soccerway_id, confirm=confirm)
 	return 0
 
 def findId(page=''):

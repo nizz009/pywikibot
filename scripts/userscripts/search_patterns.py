@@ -18,8 +18,10 @@ def val_parser(code='', found_items=''):
 			found_item = found_item.replace('[', '').replace(']', '').replace('\'', '')
 			found_item = found_item.split('<br>')
 			for item in found_item:
+				item = re.sub(r'\<.*','',item)
+				item = re.sub(r'\(.*','',item)
+				# print(item)
 				items.append(item)
-			# print(item)
 			# print('\n')
 
 		# # print(values)
@@ -112,7 +114,7 @@ def search_infobox_value(page_text='', word=''):
 		return 1
 
 	# try:
-	found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,})' % word, page_text, re.IGNORECASE)
+	found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,}[\w]{1,})' % word, page_text, re.IGNORECASE)
 	# print(found_items)
 	if found_items:
 		item_list = val_parser(code=1, found_items=found_items)
@@ -123,7 +125,7 @@ def search_infobox_value(page_text='', word=''):
 	return 0
 
 def infobox(page_text='', word='', check_all=''):
-	print(page_text)
+	# print(page_text)
 	if not page_text:
 		print('No text is present.\n')
 		return None
@@ -164,9 +166,10 @@ def infobox(page_text='', word='', check_all=''):
 					value = search_infobox_value(page_text=page_text, word=prop)
 				# print(value)
 				try:
-					propval_pair[str(prop)] = str(value[0])
+					propval_pair[str(prop)] = value[0]
 				except:
-					print('No corresponding value for ' + str(prop) + ' exists. Skipping...')
+					# print('No corresponding value for ' + str(prop) + ' exists. Skipping...')
+					pass
 
 		else:
 			for prop in properties:
@@ -176,14 +179,15 @@ def infobox(page_text='', word='', check_all=''):
 					value = search_infobox_value(page_text=page_text, word=prop)
 				try:
 					if len(value) == 1:
-						propval_pair[str(prop)] = str(value[0])
+						propval_pair[str(prop)] = value[0]
 					else:
-						propval_pair[str(prop)] = str(value)
+						propval_pair[str(prop)] = value
 				except:
-					print('No corresponding value for ' + str(prop) + ' exists. Skipping...')
+					# print('No corresponding value for ' + str(prop) + ' exists. Skipping...')
+					pass
 
-		for prop in propval_pair:
-			print(str(prop) + " : " + propval_pair[prop])
+		# for prop in propval_pair:
+		# 	print(str(prop) + " : " + propval_pair[prop])
 
 		print('\n')
 

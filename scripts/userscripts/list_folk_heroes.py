@@ -56,15 +56,15 @@ def main():
 
 				for prop in info.keys():
 					print(str(prop) + ': ' + str(info[prop]))
-					try:
-						if 'date' in str(prop):
-							wd_page.addDate(prop_id=prop_ids[str(prop)], date=info[prop])
-						elif 'image' in str(prop):
-							wd_page.addFiles(prop_id=prop_ids[str(prop)], prop_value=str(info[prop]))
-						else:
-							wd_page.addWdProp(prop_id=prop_ids[str(prop)], prop_value=str(info[prop]))
-					except:
-						pass
+					# try:
+					# 	if 'date' in str(prop):
+					# 		wd_page.addDate(prop_id=prop_ids[str(prop)], date=info[prop])
+					# 	elif 'image' in str(prop):
+					# 		wd_page.addFiles(prop_id=prop_ids[str(prop)], prop_value=str(info[prop]))
+					# 	else:
+					# 		wd_page.addWdProp(prop_id=prop_ids[str(prop)], prop_value=str(info[prop]))
+					# except:
+					# 	pass
 
 				print('\n')
 			else:

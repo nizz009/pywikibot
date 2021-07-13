@@ -67,6 +67,7 @@ class WpPage:
 		if page_name:
 			self.page_name = page_name
 			self.page = pywikibot.Page(enwp, page_name)
+			self.title = self.page.title()
 
 	def getWpContents(self):
 		""" Returns contents of a Wikidata page """
@@ -153,11 +154,14 @@ class WpPage:
 	def findInfobox(self, check_all=''):
 		if self.page:
 			text_screened = re.findall(r'\{\{Infobox .*[\n]*', self.page.text, re.DOTALL)
-			text = text_screened[0].split('==')
-			text = text[0].split('\n}}')
-			result = search_patterns.infobox(page_text=text[0], check_all=check_all)
-			# search_patterns.infobox(self.page.text)
-			return result
+			if text_screened:
+				text = text_screened[0].split('==')
+				text = text[0].split('\n}}')
+				result = search_patterns.infobox(page_text=text[0], check_all=check_all)
+				# search_patterns.infobox(self.page.text)
+				if result:
+					return result
+				return ''
 		else:
 			print('No page exists.')
 			return None
@@ -174,15 +178,35 @@ class WpPage:
 
 # deals with Wikidata articles
 class WdPage:
+	"""
+	List of methods:
+
+	- printWdContents
+	- addWdProp
+	- addFiles
+	- addNumeric
+	- addDate
+	- addIdentifiers
+	- checkClaimExistence
+	- addImportedFrom
+	- addQualifiers
+
+	"""
 
 	def __init__(self, wd_value='', page_name=''):
 		if wd_value:
 			self.page = pywikibot.ItemPage(enwd, wd_value)
 		elif page_name:
 			wp_page = pywikibot.Page(enwp, page_name)
-			self.page = pywikibot.ItemPage.fromPage(wp_page)
+			if wp_page:
+				self.page = pywikibot.ItemPage.fromPage(wp_page)
+			else:
+				print('No wikipedia page exists')
 
 		self.wd_value = self.page.title()
+
+	def getWdContents(self):
+		return self.page.get()
 
 	def printWdContents(self):
 		""" Prints contents of a Wikidata page """
@@ -205,7 +229,7 @@ class WdPage:
 
 		return 0
 
-	def addWdProp(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm=''):
+	def addWdProp(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
 		"""
 		Adds a new property in Wikidata
 
@@ -233,7 +257,7 @@ class WdPage:
 					# check for valid search result
 					if not '<search />' in raw:
 						m = re.findall(r'id="(Q\d+)"', raw)
-						print(m)
+						# print(m)
 
 						for itemfoundq in m:
 							itemfound = pywikibot.ItemPage(repo, itemfoundq)
@@ -242,7 +266,7 @@ class WdPage:
 							# print(item_dict['labels']['en'])
 							# print('\n')
 
-							if prop_value == item_dict['labels']['en']:
+							if prop_value.lower() == (item_dict['labels']['en']).lower():
 								# print('hello')
 								new_prop_val = pywikibot.ItemPage(enwd, itemfoundq)
 					else:
@@ -254,15 +278,17 @@ class WdPage:
 
 		self.page.get()
 		if prop_id in self.page.claims:
-			choice = input('Property already exists. Select:\n\
-				1 to skip\n\
-				2 to over-write the existing property\n\
-				3 to add another value to the property\n')
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
 
 			if choice == '1':
 				return
 
-			elif choice == '2':
+			elif choice == '2' or overwrite == 'y':
 				self.page.removeClaims(self.page.claims[prop_id])
 		
 			elif choice > '3':
@@ -306,7 +332,7 @@ class WdPage:
 
 		return 0
 
-	def addFiles(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm=''):
+	def addFiles(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds files from Commons to Wikidata """
 
 		print(self.page.title())
@@ -320,17 +346,19 @@ class WdPage:
 
 		self.page.get()
 		if prop_id in self.page.claims:
-			choice = input('Property already exists. Select:\n\
-				1 to skip\n\
-				2 to over-write the existing property\n\
-				3 to add another value to the property\n')
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
 
 			if choice == '1':
 				return
 
-			elif choice == '2':
+			elif choice == '2' or overwrite == 'y':
 				self.page.removeClaims(self.page.claims[prop_id])
-
+		
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
@@ -346,8 +374,11 @@ class WdPage:
 				if lang:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
 					# print("Reference added.")
-				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+				if qualifier_id:
+					if qualval_id:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					elif qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
 					# print("Qualifier added.")
 
 			else:
@@ -361,8 +392,11 @@ class WdPage:
 					if lang:
 						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
 						# print("Reference added.")
-					if qualifier_id and qualval_id:
-						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					if qualifier_id:
+						if qualval_id:
+							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+						elif qualval:
+							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
 						# print("Qualifier added.")
 
 		except:
@@ -370,7 +404,76 @@ class WdPage:
 
 		return 0
 
-	def addNumeric(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm=''):
+	def addMonolingualText(self, prop_id='', prop_value='', text_language='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+		""" Adds numeric values to Wikidata """
+
+		print(self.page.title())
+
+		if prop_value:
+			try:
+				val = pywikibot.WbMonolingualText(text=prop_value, language=text_language)
+			except:
+				print('Incorrect property value provided.\n')
+				return 1
+
+		self.page.get()
+		if prop_id in self.page.claims:
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
+
+			if choice == '1':
+				return
+
+			elif choice == '2' or overwrite == 'y':
+				self.page.removeClaims(self.page.claims[prop_id])
+		
+			elif choice > '3':
+				print("Invalid choice.\n")
+				return 1
+
+		# try:
+		new_prop = pywikibot.Claim(repo, prop_id)
+		# print('hello')
+		new_prop.setTarget(val)
+		# print(val)
+
+		if confirm.lower() == 'y':
+			self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+			self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+			if lang:
+				self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				# print("Reference added.")
+			if qualifier_id and qualval_id:
+				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+				# print("Qualifier added.")
+
+		else:
+			# confirmation
+			print(new_prop)
+			text = input("Do you want to save this property? (y/n) ")
+			if text == 'y':
+				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
+
+		# except:
+		# 	print('Error in adding numeric value.')
+
+		return 0
+
+
+	def addNumeric(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -384,17 +487,19 @@ class WdPage:
 
 		self.page.get()
 		if prop_id in self.page.claims:
-			choice = input('Property already exists. Select:\n\
-				1 to skip\n\
-				2 to over-write the existing property\n\
-				3 to add another value to the property\n')
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
 
 			if choice == '1':
 				return
 
-			elif choice == '2':
+			elif choice == '2' or overwrite == 'y':
 				self.page.removeClaims(self.page.claims[prop_id])
-
+		
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
@@ -436,7 +541,7 @@ class WdPage:
 
 		return 0
 
-	def addDate(self, prop_id='', date='', lang='', qualifier_id='', qualval_id='', confirm=''):
+	def addDate(self, prop_id='', date='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -445,17 +550,19 @@ class WdPage:
 			self.page.get()
 
 			if prop_id in self.page.claims:
-				choice = input('Property already exists. Select:\n\
-					1 to skip\n\
-					2 to over-write the existing property\n\
-					3 to add another value to the property\n')
+				choice = ''
+				if not append and not overwrite:
+					choice = input('Property already exists. Select:\n\
+						1 to skip\n\
+						2 to over-write the existing property\n\
+						3 to add another value to the property\n')
 
 				if choice == '1':
 					return
 
-				elif choice == '2':
+				elif choice == '2' or overwrite == 'y':
 					self.page.removeClaims(self.page.claims[prop_id])
-		
+			
 				elif choice > '3':
 					print("Invalid choice.\n")
 					return 1
@@ -514,7 +621,7 @@ class WdPage:
 		return 0
 
 
-	def addIdentifiers(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm=''):
+	def addIdentifiers(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -525,17 +632,19 @@ class WdPage:
 
 		self.page.get()
 		if prop_id in self.page.claims:
-			choice = input('Property already exists. Select:\n\
-				1 to skip\n\
-				2 to over-write the existing property\n\
-				3 to add another value to the property\n')
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
 
 			if choice == '1':
 				return
 
-			elif choice == '2':
+			elif choice == '2' or overwrite == 'y':
 				self.page.removeClaims(self.page.claims[prop_id])
-
+		
 			elif choice > '3':
 				print("Invalid choice.\n")
 				return 1
@@ -573,7 +682,7 @@ class WdPage:
 						# print("Qualifier added.")
 
 		except:
-			print('Error in adding numeric value.')
+			print('Error in adding identifier.')
 
 		return 0
 
@@ -657,7 +766,7 @@ class WdPage:
 
 		return 0
 
-	def addQualifiers(self, repo=repo, prop_id='', prop_value='', claim='', qualifier_id='', qualval_id='', status=0):
+	def addQualifiers(self, repo=repo, prop_id='', prop_value='', claim='', qualifier_id='', qualval='', qualval_id='', status=0):
 		"""
 		Adds a qualifier
 
@@ -679,9 +788,13 @@ class WdPage:
 		if status == 0:
 			claim = self.checkClaimExistence(claim)
 
-		if repo and claim and qualifier_id and qualval_id:
-			qualifier = pywikibot.Claim(repo, qualifier_id)
+		if qualval_id:
 			qualifier_val = pywikibot.ItemPage(repo, qualval_id)
+		elif qualval:
+			qualifier_val = qualval
+
+		if repo and claim and qualifier_id:
+			qualifier = pywikibot.Claim(repo, qualifier_id)
 			qualifier.setTarget(qualifier_val)
 			claim.addQualifier(qualifier, summary='Adding 1 qualifier')
 			self.page = pywikibot.ItemPage(enwd, self.wd_value)
@@ -691,38 +804,40 @@ class WdPage:
 
 
 def main():
-	page_name = input('Name of article: ')
-# 	wd_value = 'Q4115189'
+	# page_name = input('Name of article: ')
+	wd_value = 'Q4115189'
 # 	wp_page = ''
 # 	wd_page = ''
 
 	# # Test for Wikipedia page
-	try:
-		wp_page = WpPage(page_name)
+	# try:
+	# 	wp_page = WpPage(page_name)
 	# 	print(wp_page.searchWpPage(props={'P50': ['J. K. Rowling'], 'P123': ['Bloomsbury']}))
 	# 	print('\n')
-	except:
-		('Page does not exist.\n')
-		return 1
-
-	if wp_page:
-		# wp_page.printWpContents()
-		# print('\n')
-		wp_page.findInfobox()
-		print('\n')
-
-	# # Test for Wikidata page
-	# try:
-	# 	wd_page = WdPage(wd_value)
 	# except:
-	# 	("Page does not exist.\n")
+	# 	('Page does not exist.\n')
 	# 	return 1
 
-	# if wd_page:
+	# if wp_page:
+		# wp_page.printWpContents()
+		# print('\n')
+		# wp_page.findInfobox()
+		# print('\n')
+
+	# Test for Wikidata page
+	try:
+		wd_page = WdPage(wd_value)
+	except:
+		("Page does not exist.\n")
+		return 1
+
+	if wd_page:
 	# 	wd_page.printWdContents()
-	# 	wd_page.addWdProp(prop_id='P31', prop_value='Q5', lang='en', qualifier_id='P1013', qualval_id='Q139')
-	# 	wd_page.addFiles(prop_id='P18', prop_value='Harry Potter i les reliquies de la mort.jpg', lang='fr')
+		# wd_page.addWdProp(prop_id='P607', prop_value='Bay of Pigs invasion', lang='en', qualifier_id='P1013', qualval_id='Q139')
+		# wd_page.addFiles(prop_id='P18', prop_value='image: Anarchy-symbol.svg', lang='fr')
 	# 	wd_page.addNumeric(prop_id='P1104', prop_value=123)
+		wd_page.addMonolingualText(prop_id='P1451', prop_value='hello', text_language='en')
+		# wd_page.addIdentifiers(prop_id='P1451', prop_value='hello')
 	# 	wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
 	# 	wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
 
