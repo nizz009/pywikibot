@@ -10,7 +10,7 @@ import urllib
 import urllib.request
 import urllib.parse
 import datetime
-# import dateparser
+import dateparser
 
 import pywikibot
 from pywikibot import pagegenerators
@@ -22,6 +22,7 @@ enwp = pywikibot.Site('en', 'wikipedia')
 enwd = pywikibot.Site('wikidata', 'wikidata')
 repo = enwd.data_repository()
 encommons = pywikibot.Site('commons', 'commons')
+globe_item = pywikibot.ItemPage(repo, 'Q2')
 
 langs = { 
 	'en': 'Q328', 
@@ -38,7 +39,7 @@ def getURL(url='', retry=True, timeout=30):
 		raw = urllib.request.urlopen(req, timeout=timeout).read().strip().decode('utf-8')
 	except:
 		sleep = 10 # seconds
-		maxsleep = 900
+		maxsleep = 100
 		while retry and sleep <= maxsleep:
 			print('Error while retrieving: %s' % (url))
 			print('Retry in %s seconds...' % (sleep))
@@ -49,6 +50,71 @@ def getURL(url='', retry=True, timeout=30):
 				pass
 			sleep = sleep * 2
 	return raw
+
+def get_precision(val):
+	# print(val)
+	if '.' in str(val):
+		val = val.split('.')[1]
+		length = len(val)
+	else:
+		length = 0
+	if length >= 5:
+		length = 5
+	# print(len(val))
+	return 10**-length
+
+def calc_coord(params):
+	# print(len(params))
+	lat = False
+	lon = False
+	precision = False
+	if len(params) >= 8:
+		if 'S' in params[3] or 'N' in params[3]:
+			lat = float(params[0]) + (float(params[1])/60.0)+(float(params[2])/(60.0*60.0))
+			if 'S' in params[3]:
+				lat = -lat
+			lon = float(params[4]) + (float(params[5])/60.0)+(float(params[6])/(60.0*60.0))
+			if 'W' in params[7] or 'O' in params[7]:
+				lon = -lon
+			precision = get_precision(params[2])/(60.0*60.0)
+	if lat == False and len(params) > 2:
+		if ('S' in params[2] or 'N' in params[2]) and len(params) >= 5:
+			lat = float(params[0]) + (float(params[1])/60.0)
+			if 'S' in params[2]:
+				lat = -lat
+			lon = float(params[3]) + (float(params[4])/60.0)
+			if 'W' in params[5] or 'O' in params[5]:
+				lon = -lon
+			precision = get_precision(params[1])/(60.0)
+		elif (params[1] == 'N' or params[1] == 'S') and len(params) >= 3:
+			lat = float(params[0])
+			lon = float(params[2])
+			precision = get_precision(params[0])
+			if params[1] == 'S':
+				lat = -lat
+			if params[3] == 'W' or params[3] == 'O':
+				lon = -lon
+		elif '.' in params[0] and '.' in params[1]:
+			lat = float(params[0])
+			lon = float(params[1])
+			precision = get_precision(params[0])
+		else:
+			print(params)
+			print('Something odd in calc_coord (1)')
+			# return False, False, False
+	elif '.' in params[0] and '.' in params[1]:
+		lat = float(params[0])
+		lon = float(params[1])
+		precision = get_precision(params[0])
+
+	if lat == False:
+		print(params)
+		print('Something odd in calc_coord (2)')
+		# return False, False, False
+	# print(lon)
+	# print(lat)
+	# print(precision)
+	return lat, lon, precision
 
 # deals with Wikipedia articles
 class WpPage:
@@ -70,7 +136,7 @@ class WpPage:
 			self.title = self.page.title()
 
 	def getWpContents(self):
-		""" Returns contents of a Wikidata page """
+		""" Returns contents of a Wikipedia page """
 		if self.page:
 			return self.page.text
 		else:
@@ -245,7 +311,7 @@ class WdPage:
 		"""
 		print(self.page.title())
 
-		if prop_value:
+		if prop_value and not re.search(r'Unknown', prop_value, re.IGNORECASE):
 			try:
 				if re.search(r'Q\d+', prop_value):
 					new_prop_val = pywikibot.ItemPage(enwd, prop_value)
@@ -435,28 +501,13 @@ class WdPage:
 				print("Invalid choice.\n")
 				return 1
 
-		# try:
-		new_prop = pywikibot.Claim(repo, prop_id)
-		# print('hello')
-		new_prop.setTarget(val)
-		# print(val)
+		try:
+			new_prop = pywikibot.Claim(repo, prop_id)
+			# print('hello')
+			new_prop.setTarget(val)
+			# print(val)
 
-		if confirm.lower() == 'y':
-			self.page.addClaim(new_prop, summary = u'Adding new numeric value')
-			self.page = pywikibot.ItemPage(enwd, self.wd_value)
-
-			if lang:
-				self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
-				# print("Reference added.")
-			if qualifier_id and qualval_id:
-				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
-				# print("Qualifier added.")
-
-		else:
-			# confirmation
-			print(new_prop)
-			text = input("Do you want to save this property? (y/n) ")
-			if text == 'y':
+			if confirm.lower() == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
@@ -467,8 +518,23 @@ class WdPage:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
 
-		# except:
-		# 	print('Error in adding numeric value.')
+			else:
+				# confirmation
+				print(new_prop)
+				text = input("Do you want to save this property? (y/n) ")
+				if text == 'y':
+					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+					self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+					if lang:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+						# print("Reference added.")
+					if qualifier_id and qualval_id:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+						# print("Qualifier added.")
+
+		except:
+			print('Error in adding monolingual text.')
 
 		return 0
 
@@ -541,10 +607,96 @@ class WdPage:
 
 		return 0
 
+	def addCoordinates(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+		""" Adds coordinates to Wikidata """
+
+		print(self.page.title())
+
+		if prop_value and '|' in prop_value:
+			prop_value = prop_value.split('|')
+			try:
+				lat, lon, precision = calc_coord(prop_value)
+			except:
+				print('Something went wrong while adding coordinates.')
+				return
+
+		if precision <= 0.0:
+			print('Incorrect precision value obtained')
+			return
+
+		self.page.get()
+		if prop_id in self.page.claims:
+			choice = ''
+			if not append and not overwrite:
+				choice = input('Property already exists. Select:\n\
+					1 to skip\n\
+					2 to over-write the existing property\n\
+					3 to add another value to the property\n')
+
+			if choice == '1':
+				return
+
+			elif choice == '2' or overwrite == 'y':
+				self.page.removeClaims(self.page.claims[prop_id])
+		
+			elif choice > '3':
+				print("Invalid choice.\n")
+				return 1
+
+		try:
+			new_prop = pywikibot.Claim(repo, prop_id)
+			coordinate = pywikibot.Coordinate(lat=lat, lon=lon, precision=precision, site=enwp,globe_item=globe_item)
+			new_prop.setTarget(coordinate)
+
+			if confirm.lower() == 'y':
+				self.page.addClaim(new_prop, summary=u'Importing new coordinate')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+				if lang:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					# print("Reference added.")
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					# print("Qualifier added.")
+
+			else:
+				# confirmation
+				print(new_prop)
+				text = input("Do you want to save this property? (y/n) ")
+				if text == 'y':
+					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+					self.page = pywikibot.ItemPage(enwd, self.wd_value)
+
+					if lang:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+						# print("Reference added.")
+					if qualifier_id and qualval_id:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+						# print("Qualifier added.")
+
+		except:
+			print('Error in adding numeric value.')
+
 	def addDate(self, prop_id='', date='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
+
+		if date and not re.search(r'\d-\d-\d', date, re.IGNORECASE):
+			date = date.split()
+			try:
+				if len(date) == 3:
+					value = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
+					date = str(value.year) + '-' + str(value.month) + '-' + str(value.day)
+				elif len(date) == 2:
+					value = dateparser.parse(str(date[0])+' '+str(date[1]))
+					date = str(value.year) + '-' + str(value.month)
+				elif len(date) == 1:
+					value = dateparser.parse(str(date[0]))
+					date = str(value.year)
+			except:
+				print('Error in extracting date.\n')
+				return
 
 		if date and date != '0-0-0':
 			self.page.get()
@@ -803,9 +955,10 @@ class WdPage:
 		return 0
 
 
-def main():
+# def main():
 	# page_name = input('Name of article: ')
-	wd_value = 'Q4115189'
+	# page_name = 'Hallock-Bilunas Farmstead'
+	# wd_value = 'Q4115189'
 # 	wp_page = ''
 # 	wd_page = ''
 
@@ -821,30 +974,33 @@ def main():
 	# if wp_page:
 		# wp_page.printWpContents()
 		# print('\n')
-		# wp_page.findInfobox()
-		# print('\n')
+	# 	info = wp_page.findInfobox()
+	# 	for prop in info.keys():
+	# 		print(str(prop) + ': ' + str(info[prop]))
+	# 	print('\n')
 
-	# Test for Wikidata page
-	try:
-		wd_page = WdPage(wd_value)
-	except:
-		("Page does not exist.\n")
-		return 1
+	# # Test for Wikidata page
+	# try:
+	# 	wd_page = WdPage(wd_value)
+	# except:
+	# 	("Page does not exist.\n")
+	# 	return 1
 
-	if wd_page:
+	# if wd_page:
 	# 	wd_page.printWdContents()
 		# wd_page.addWdProp(prop_id='P607', prop_value='Bay of Pigs invasion', lang='en', qualifier_id='P1013', qualval_id='Q139')
 		# wd_page.addFiles(prop_id='P18', prop_value='image: Anarchy-symbol.svg', lang='fr')
-	# 	wd_page.addNumeric(prop_id='P1104', prop_value=123)
-		wd_page.addMonolingualText(prop_id='P1451', prop_value='hello', text_language='en')
+		# wd_page.addCoordinates(prop_id='P625', prop_value=info['coordinates'])
+		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
+		# wd_page.addMonolingualText(prop_id='P1451', prop_value='hello', text_language='en')
 		# wd_page.addIdentifiers(prop_id='P1451', prop_value='hello')
 	# 	wd_page.addImportedFrom(prop_id='P31', prop_value='Q5', lang='en')
 	# 	wd_page.addQualifiers(prop_id='P31', prop_value='Q5', qualifier_id='P1013', qualval_id='Q139')
+		# wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
+		# wd_page.addDate(prop_id='P577', date=info['added'], lang='fr')
 
-	# 	# Mention the date in yyyy-mm-dd/yyyy-mm/yyyyformat(s)
-	# 	wd_page.addDate(prop_id='P577', date='2012-02-03', lang='fr')
 
 # 	return 0
 	
-if __name__ == "__main__":
-	main()
+# if __name__ == "__main__":
+# 	main()

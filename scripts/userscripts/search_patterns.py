@@ -18,18 +18,13 @@ def val_parser(code='', found_items=''):
 			found_item = found_item.replace('[', '').replace(']', '').replace('\'', '')
 			found_item = found_item.split('<br>')
 			for item in found_item:
-				item = re.sub(r'\<.*','',item)
-				item = re.sub(r'\(.*','',item)
+				# item = re.sub(r'\(.*\)?', '', item)
+				item = re.sub(r'[\<].*?[\>]', '', item)
+				item = re.sub(r'\<.*', '', item)
 				# print(item)
 				items.append(item)
 			# print('\n')
 
-		# # print(values)
-		# items = list()
-		# for value in values:
-		# 	item = re.findall(r'[&\w\s]+[^\[\],][&\w\s\|\(\)\-\,]+', value)
-		# 	if item:
-		# 		items.append(item[0])
 		return items
 
 	elif code == 2:
@@ -113,14 +108,19 @@ def search_infobox_value(page_text='', word=''):
 		print('No text is available.')
 		return 1
 
-	# try:
-	found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,}[\w]{1,})' % word, page_text, re.IGNORECASE)
-	# print(found_items)
-	if found_items:
-		item_list = val_parser(code=1, found_items=found_items)
-		return item_list
-	# except:
-	# 	print('Error in retrieving information for %s' % word)
+	try:
+		found_items = ''
+		found_items = re.findall(r'\|\s*%s\s*\=\s*{{coord\|(.*)}}' % word, page_text, re.IGNORECASE)
+
+		if not found_items:
+			found_items = re.findall(r'\|\s*%s\s*\=\s*([^\n\{\}\|\/]{1,}[\w\)]{1,})' % word, page_text, re.IGNORECASE)
+		# print(found_items)
+
+		if found_items:
+			item_list = val_parser(code=1, found_items=found_items)
+			return item_list
+	except:
+		print('Error in retrieving information for %s' % word)
 
 	return 0
 

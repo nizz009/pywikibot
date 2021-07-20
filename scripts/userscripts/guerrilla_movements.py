@@ -3,6 +3,8 @@
 
 import re
 import pywikibot
+import datetime
+import dateparser
 import base_ops as base
 
 # properties to be imported
@@ -46,44 +48,71 @@ lang = 'en'
 
 def addToWd(wd_page='', prop_id='', prop_value='', prop_list=''):
 
-	# check for previous existence of property-value pair in page
+	""" check for previous existence of property-value pair in page """
 	if prop_id in wd_page.page.claims:
 		item = wd_page.page.claims[prop_id]
+		# iterates through each value associated with each prop id
 		for value in item:
+			# print(value)
 			try:
-				value_qid = value.getTarget()
-				propval_title = value_qid.title()
-				if re.search(r'Q\d+', propval_title):
-					wdpage_val = base.WdPage(wd_value=propval_title)
+				item_value = value.getTarget()
+				if prop_id in time:
+					date = prop_value.split()
+					try:
+						if len(date) == 3:
+							import_date = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
+						elif len(date) == 2:
+							import_date = dateparser.parse(str(date[0])+' '+str(date[1]))
+						elif len(date) == 1:
+							import_date = dateparser.parse(str(date[0]))
+					except:
+						print('Error in extracting date.\n')
+						return
+					if import_date.year == item_value.year and import_date.month == item_value.month and import_date.day == item_value.day:
+						print('Same property-value exist in the page already. Skipping...')
+						return 1
+					
+				elif prop_id in commons_media:
+					wd_propval = item_value.title()
+					if prop_value.strip('File:').strip('Image:').strip('image:') == wd_propval.strip('File:'):
+						print('Same property-value exist in the page already. Skipping...')
+						return 1
+
+				elif prop_id in string:
+					if prop_value == item_value.text:
+						print('Same property-value exist in the page already. Skipping...')
+						return 1
+
+				elif prop_id in wikibase_item:
+					wd_propval = item_value.title()
+					wdpage_val = base.WdPage(wd_value=wd_propval)
 					if prop_value == wdpage_val.page.labels['en']:
 						print('Same property-value exist in the page already. Skipping...')
 						return 1
-				else:
-					if prop_value == value_qid['labels']['en']:
-						print('Same property-value exist in the page already. Skipping...')
-						return 1
+
 			except:
 				pass
 
+	""" import details into Wikidata """
 	if prop_id in time:
-		wd_page.addDate(prop_id=prop_id, date=prop_value, confirm='y', append='y')
+		wd_page.addDate(prop_id=prop_id, date=prop_value, lang=lang, confirm='y', append='y')
 		
 	elif prop_id in commons_media:
 		# setting captions/media legend for images
 		if prop_id == 'P18' and 'caption' in prop_list.keys():
 			caption = pywikibot.WbMonolingualText(text=str(prop_list['caption']), language=lang)
-			wd_page.addFiles(prop_id=prop_id, prop_value=prop_value, qualifier_id='P2096', qualval=caption, confirm='y', append='y')
+			wd_page.addFiles(prop_id=prop_id, prop_value=prop_value, lang=lang, qualifier_id='P2096', qualval=caption, confirm='y', append='y')
 		else:
-			wd_page.addFiles(prop_id=prop_id, prop_value=prop_value, confirm='y', append='y')
+			wd_page.addFiles(prop_id=prop_id, prop_value=prop_value, lang=lang, confirm='y', append='y')
 
 	elif prop_id in string:
 		if 'native_name_lang' in prop_list.keys():
-			wd_page.addMonolingualText(prop_id=prop_id, prop_value=prop_value, text_language=str(prop_list['native_name_lang']), confirm='y', append='y')
+			wd_page.addMonolingualText(prop_id=prop_id, prop_value=prop_value, lang=lang, text_language=str(prop_list['native_name_lang']), confirm='y', append='y')
 		else:
 			print('Missing native language.')
 
 	elif prop_id in wikibase_item:
-		wd_page.addWdProp(prop_id=prop_id, prop_value=prop_value, confirm='y', append='y')
+		wd_page.addWdProp(prop_id=prop_id, prop_value=prop_value, lang=lang, confirm='y', append='y')
 
 	return 0
 
@@ -97,12 +126,12 @@ def main():
 	list_items = re.split(r'==[\w\s]*==', contents)
 	# print(list_items)
 
-	""" Extracting names of the movements """
+	""" Extracting names of the Wp articles """
 	items = list()
 	for i in range(1, 22):
 		items.append(list_items[i])
 
-	i = 0
+	# i = 0
 	rows = list()
 	for item in items:
 		# print(item)
@@ -121,11 +150,9 @@ def main():
 
 				wp_page = base.WpPage(movement)
 				if wp_page.getWpContents():
-
 					print(wp_page.title)
 
 					""" Extracting info from infobox and adding to Wikidata """
-
 					# find info from the infobox
 					info = wp_page.findInfobox(check_all='y')
 
@@ -136,7 +163,7 @@ def main():
 					except:
 						pass
 
-					wd_page = base.WdPage(wd_value='Q4115189')
+					# wd_page = base.WdPage(wd_value='Q4115189')
 
 					if info and wd_page:
 						# iterate through each info extracted from infobox
@@ -161,6 +188,11 @@ def main():
 				else:
 					print('No such page exists. Skipping...\n')
 					continue
+
+			# if i < 5:
+			# 	i += 1
+			# else:
+			# 	break
 
 if __name__ == "__main__":
 	main()
