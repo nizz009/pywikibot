@@ -3,7 +3,7 @@
 ### Basic Operations
 
 #### base_ops.py
-Contains the basic operations/resuable code for working with Wikipedia and Wikidata pages.
+Contains basic operations/resuable code for working with Wikipedia and Wikidata pages.
 
 ##### [Recti/Modi]fications:
 1. Add methods to add coordinates and maps in Wikidata
@@ -19,17 +19,13 @@ Extracts information from the Wikipedia articles
 
 ### Categories
 
-#### import_soccerway_id.py
+#### import_soccerway_id.py (approved)
 Adds the missing soccerway ids in Wd whose Wp pages use the socceryway id template <br>
 Follows the following layout:
 1. No IDs - get their ID
 2. With IDs - check authenticity
 	1. Correct - add to Wd
 	2. Incorrect - get their ID
-
-##### [Recti/Modi]fications:
-1. checkAuthenticity (checks the Id present in the Wikipedia article) 
-	1. add more criteria for checks (profession, birth date, etc.)
 
 #### import_wta_id.py
 Adds the missing WTA ids in Wd whose Wp pages use the WTA id template <br>
@@ -46,12 +42,11 @@ Part of submissions during the contribution period
 1. Improvise the overall code
 
 ### Lists
+Iterates through the Wikipedia articles/pages mentioned in the lists and imports information from the infoboxes of each article/page - also adds the P143 reference
 
-#### nobel_laureates_phy.py
-
-#### list_folk_heroes.py
-
-#### historicplaces_riverhead_ny.py
+#### 1. guerrilla_movements.py
+#### 2. list_folk_heroes.py
+#### 3. historicplaces_riverhead_ny.py
 
 ## Things to work on:
 
