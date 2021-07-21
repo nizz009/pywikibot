@@ -508,7 +508,7 @@ class WdPage:
 			# print(val)
 
 			if confirm.lower() == 'y':
-				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+				self.page.addClaim(new_prop, summary = u'Adding new string/monolingual text')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 				if lang:
@@ -523,7 +523,7 @@ class WdPage:
 				print(new_prop)
 				text = input("Do you want to save this property? (y/n) ")
 				if text == 'y':
-					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+					self.page.addClaim(new_prop, summary = u'Adding new string/monolingual text')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 					if lang:
@@ -664,7 +664,7 @@ class WdPage:
 				print(new_prop)
 				text = input("Do you want to save this property? (y/n) ")
 				if text == 'y':
-					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+					self.page.addClaim(new_prop, summary = u'Importing new coordinate')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 					if lang:
@@ -743,7 +743,7 @@ class WdPage:
 						new_prop.setTarget(pywikibot.WbTime(year=int(date.split('-')[0])))
 
 					if confirm.lower() == 'y':
-						self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+						self.page.addClaim(new_prop, summary = u'Adding new date')
 						self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 						if lang:
@@ -758,7 +758,7 @@ class WdPage:
 						print(new_prop)
 						text = input("Do you want to save this property? (y/n) ")
 						if text == 'y':
-							self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+							self.page.addClaim(new_prop, summary = u'Adding new date')
 							self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 							if lang:
@@ -808,7 +808,7 @@ class WdPage:
 			# print(val)
 
 			if confirm.lower() == 'y':
-				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+				self.page.addClaim(new_prop, summary = u'Adding new identifier')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 				if lang:
@@ -823,7 +823,7 @@ class WdPage:
 				print(new_prop)
 				text = input("Do you want to save this property? (y/n) ")
 				if text == 'y':
-					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
+					self.page.addClaim(new_prop, summary = u'Adding new identifier')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
 					if lang:
