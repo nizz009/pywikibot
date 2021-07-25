@@ -167,7 +167,7 @@ class WpPage:
 		searchitemurl = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%s&language=en&format=xml' % (urllib.parse.quote(page_title_))
 		raw = getURL(searchitemurl)
 
-		# searches and matches the authors for the searched item
+		# searches and matches the items for the searched item
 		if not '<search />' in raw:
 			q_values = re.findall(r'id="(Q\d+)"', raw)
 			for q_value in q_values:
@@ -175,8 +175,18 @@ class WpPage:
 				itemfound = pywikibot.ItemPage(repo, q_value)
 				item_dict = itemfound.get()
 
-				prop_count = 0
 				flag = 0
+				if 'P31' in itemfound.claims:
+					for claim in item_dict['claims']['P31']:
+						prop_id_value = claim.getTarget()
+						if prop_id_value == 'Q4167410':
+							print('Dsiambiguous page. Skipping...')
+							flag = 1
+							break
+				if flag:
+					continue
+
+				prop_count = 0
 				# check for each property criteria provided
 				for prop_id in props.keys():
 					prop_count += 1
@@ -320,6 +330,7 @@ class WdPage:
 					raw = getURL(searchitemurl)
 					# print(raw)
 					
+					ids = list()
 					# check for valid search result
 					if not '<search />' in raw:
 						m = re.findall(r'id="(Q\d+)"', raw)
@@ -331,10 +342,28 @@ class WdPage:
 							# print(prop_value)
 							# print(item_dict['labels']['en'])
 							# print('\n')
+							flag = 0
+							if 'P31' in itemfound.claims:
+								for claim in item_dict['claims']['P31']:
+									prop_id_value = claim.getTarget()
+									# print(prop_id_value.title())
+									if prop_id_value.title() == 'Q4167410':
+										print('Disambiguous page. Skipping...')
+										flag = 1
+										break
+							if flag:
+								continue
 
 							if prop_value.lower() == (item_dict['labels']['en']).lower():
 								# print('hello')
-								new_prop_val = pywikibot.ItemPage(enwd, itemfoundq)
+								# new_prop_val = pywikibot.ItemPage(enwd, itemfoundq)
+								ids.append(itemfoundq)
+						if len(ids) > 1:
+							print('multiple pages found')
+							return
+						else:
+							new_prop_val = pywikibot.ItemPage(enwd, ids[0])
+
 					else:
 						print('No item page exists/Incorrect value provided.\n')
 
@@ -955,10 +984,10 @@ class WdPage:
 		return 0
 
 
-# def main():
+def main():
 	# page_name = input('Name of article: ')
 	# page_name = 'Hallock-Bilunas Farmstead'
-	# wd_value = 'Q4115189'
+	wd_value = 'Q4115189'
 # 	wp_page = ''
 # 	wd_page = ''
 
@@ -979,16 +1008,16 @@ class WdPage:
 	# 		print(str(prop) + ': ' + str(info[prop]))
 	# 	print('\n')
 
-	# # Test for Wikidata page
-	# try:
-	# 	wd_page = WdPage(wd_value)
-	# except:
-	# 	("Page does not exist.\n")
-	# 	return 1
+	# Test for Wikidata page
+	try:
+		wd_page = WdPage(wd_value)
+	except:
+		("Page does not exist.\n")
+		return 1
 
-	# if wd_page:
+	if wd_page:
 	# 	wd_page.printWdContents()
-		# wd_page.addWdProp(prop_id='P607', prop_value='Bay of Pigs invasion', lang='en', qualifier_id='P1013', qualval_id='Q139')
+		wd_page.addWdProp(prop_id='P607', prop_value='Gaius Marius', lang='en', qualifier_id='P1013', qualval_id='Q139')
 		# wd_page.addFiles(prop_id='P18', prop_value='image: Anarchy-symbol.svg', lang='fr')
 		# wd_page.addCoordinates(prop_id='P625', prop_value=info['coordinates'])
 		# wd_page.addNumeric(prop_id='P1104', prop_value=123)
@@ -1002,5 +1031,5 @@ class WdPage:
 
 # 	return 0
 	
-# if __name__ == "__main__":
-# 	main()
+if __name__ == "__main__":
+	main()

@@ -27,6 +27,8 @@ time = ['P571']
 string = ['P1451', 'P1705', 'P1813']
 coordinates = ['P625']
 identifier = ['P649']
+# properties which ideally contain only one value
+single_values = ['P149', 'P571', 'P625', 'P649']
 
 lang = 'en'
 
@@ -34,6 +36,10 @@ def addToWd(wd_page='', prop_id='', prop_value='', prop_list=''):
 
 	""" check for previous existence of property-value pair in page """
 	if prop_id in wd_page.page.claims:
+		if prop_id in single_values:
+			print('The property exists already. Skipping...')
+			return
+
 		item = wd_page.page.claims[prop_id]
 		# iterates through each value associated with each prop id
 		for value in item:
@@ -41,24 +47,33 @@ def addToWd(wd_page='', prop_id='', prop_value='', prop_list=''):
 			try:
 				item_value = value.getTarget()
 				if prop_id in time:
+					flag = 0
 					date = prop_value.split()
 					try:
 						if len(date) == 3:
 							import_date = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
+							if import_date.year == item_value.year and import_date.month == item_value.month and import_date.day == item_value.day:
+								flag = 1
 						elif len(date) == 2:
 							import_date = dateparser.parse(str(date[0])+' '+str(date[1]))
+							if import_date.year == item_value.year and import_date.month == item_value.month:
+								flag = 1
 						elif len(date) == 1:
 							import_date = dateparser.parse(str(date[0]))
+							if import_date.year == item_value.year:
+								flag = 1
 					except:
 						print('Error in extracting date.\n')
 						return
-					if import_date.year == item_value.year and import_date.month == item_value.month and import_date.day == item_value.day:
+					if flag:
 						print('Same property-value exist in the page already. Skipping...')
 						return 1
 					
 				elif prop_id in commons_media:
 					wd_propval = item_value.title()
-					if prop_value.strip('File:').strip('Image:').strip('image:') == wd_propval.strip('File:'):
+					wd_propval = wd_propval.strip('File:').strip('Image:').strip('image:').lower()
+					prop_value = prop_value.strip('File:').strip('Image:').strip('image:').lower()
+					if prop_value == wd_propval:
 						print('Same property-value exist in the page already. Skipping...')
 						return 1
 
@@ -70,7 +85,8 @@ def addToWd(wd_page='', prop_id='', prop_value='', prop_list=''):
 				elif prop_id in wikibase_item:
 					wd_propval = item_value.title()
 					wdpage_val = base.WdPage(wd_value=wd_propval)
-					if prop_value == wdpage_val.page.labels['en']:
+					wdpage_value = wdpage_val.page.labels['en'].lower()
+					if prop_value.lower() == wdpage_value:
 						print('Same property-value exist in the page already. Skipping...')
 						return 1
 
@@ -94,6 +110,8 @@ def addToWd(wd_page='', prop_id='', prop_value='', prop_list=''):
 			except:
 				pass
 
+	# wd_page = base.WdPage(wd_value='Q4115189')
+	
 	""" import details into Wikidata """
 	if prop_id in time:
 		wd_page.addDate(prop_id=prop_id, date=prop_value, lang=lang, confirm='y', append='y')
@@ -181,7 +199,7 @@ def main():
 			print('No such page exists. Skipping...\n')
 			continue
 
-		# if i < 5:
+		# if i < 25:
 		# 	i += 1
 		# else:
 		# 	break

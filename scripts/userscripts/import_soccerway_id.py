@@ -258,7 +258,7 @@ def main():
 				else:
 					print('No item page exists.\n')
 
-		if i >= 55:
+		if i >= 75:
 			break
 		else:
 			i += 1
