@@ -175,48 +175,49 @@ def main():
 			# check for existence of page
 			if wp_page.getWpContents():
 				print(wp_page.title)
+				wp_page.printWpContents()
 
-				""" Extracting info from infobox and adding to Wikidata """
-				# find info from the infobox
-				info = wp_page.findInfobox(check_all='y')
+				# """ Extracting info from infobox and adding to Wikidata """
+				# # find info from the infobox
+				# info = wp_page.findInfobox(check_all='y')
 
-				# get the Wd page
-				wd_page = ''
-				try:
-					wd_page = base.WdPage(page_name=wp_page.title)
-				except:
-					pass
+				# # get the Wd page
+				# wd_page = ''
+				# try:
+				# 	wd_page = base.WdPage(page_name=wp_page.title)
+				# except:
+				# 	pass
 
 				# wd_page = base.WdPage(wd_value='Q4115189')
 
-				if info and wd_page:
-					# iterate through each info extracted from infobox
-					for prop in info.keys():
-						print(str(prop) + ': ' + str(info[prop]))
-						try:
-							# multiple values for a prop - add each value separately
-							if type(info[prop]) is list:
-								for val in info[prop]:
-									try:
-										addToWd(wd_page=wd_page, prop_id=prop_ids[str(prop)], prop_value=val, prop_list=info)
-									except:
-										print('Error adding property.')
-										continue
-							else:
-								addToWd(wd_page=wd_page, prop_id= prop_ids[str(prop)], prop_value=info[prop], prop_list=info)
+				# if info and wd_page:
+				# 	# iterate through each info extracted from infobox
+				# 	for prop in info.keys():
+				# 		print(str(prop) + ': ' + str(info[prop]))
+				# 		try:
+				# 			# multiple values for a prop - add each value separately
+				# 			if type(info[prop]) is list:
+				# 				for val in info[prop]:
+				# 					try:
+				# 						addToWd(wd_page=wd_page, prop_id=prop_ids[str(prop)], prop_value=val, prop_list=info)
+				# 					except:
+				# 						print('Error adding property.')
+				# 						continue
+				# 			else:
+				# 				addToWd(wd_page=wd_page, prop_id= prop_ids[str(prop)], prop_value=info[prop], prop_list=info)
 
-							print('\n')
-						except:
-							pass
-					print('\n')
+				# 			print('\n')
+				# 		except:
+				# 			pass
+				# 	print('\n')
 
 			else:
 				print('No such page exists. Skipping...\n')
 				continue
-		# if i < 25:
-		# 	i += 1
-		# else:
-		# 	break
+		if i < 2:
+			i += 1
+		else:
+			break
 
 if __name__ == "__main__":
 	main()
