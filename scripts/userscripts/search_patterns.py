@@ -15,7 +15,7 @@ def val_parser(code='', found_items=''):
 	if code == 1:
 		items = list()
 		for found_item in found_items:
-			found_item = found_item.replace('[', '').replace(']', '').replace('\'', '')
+			found_item = found_item.replace('\'', '')
 			found_item = found_item.split('<br>')
 			for item in found_item:
 				# item = re.sub(r'\(.*\)?', '', item)
@@ -187,7 +187,7 @@ def infobox(page_text='', word='', check_all=''):
 					pass
 
 		# for prop in propval_pair:
-		# 	print(str(prop) + " : " + propval_pair[prop])
+		# 	print(str(prop) + " : " + str(propval_pair[prop]))
 
 		print('\n')
 

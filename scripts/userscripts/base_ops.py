@@ -132,8 +132,13 @@ class WpPage:
 	def __init__(self, page_name=''):
 		if page_name:
 			self.page_name = page_name
-			self.page = pywikibot.Page(enwp, page_name)
-			self.title = self.page.title()
+			try:
+				self.page = pywikibot.Page(enwp, page_name)
+				self.title = self.page.title()
+				self.latest_revision_id = self.page.latest_revision_id
+				
+			except:
+				pass
 
 	def getWpContents(self):
 		""" Returns contents of a Wikipedia page """
@@ -305,7 +310,7 @@ class WdPage:
 
 		return 0
 
-	def addWdProp(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addWdProp(self, prop_id='', prop_value='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		"""
 		Adds a new property in Wikidata
 
@@ -390,44 +395,50 @@ class WdPage:
 				print("Invalid choice.\n")
 				return 1
 	
-		try:
-			new_prop = pywikibot.Claim(enwd, prop_id)	
-			new_prop.setTarget(new_prop_val)
+		# try:
+		new_prop = pywikibot.Claim(enwd, prop_id)	
+		new_prop.setTarget(new_prop_val)
 
-			# confirmation
-			if confirm.lower() == 'y':
+		# confirmation
+		if confirm.lower() == 'y':
+			self.page.addClaim(new_prop, summary = u'Adding new property')
+			# retrieving the updated page
+			self.page = pywikibot.ItemPage(enwd, self.wd_value)
+	
+			if lang or source_id or sourceval_id or sourceval:
+				self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
+				# print("Reference added.")
+			if qualifier_id and qualval_id:
+				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+				# print("Qualifier added.")
+			elif qualifier_id and qualval:
+				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+				# print("Qualifier added.") 
+
+		else:
+			print(new_prop)
+			text = input("Do you want to save this property? (y/n) ")
+			if text == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new property')
 				# retrieving the updated page
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 		
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, qualval=qualval, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
-			else:
-				print(new_prop)
-				text = input("Do you want to save this property? (y/n) ")
-				if text == 'y':
-					self.page.addClaim(new_prop, summary = u'Adding new property')
-					# retrieving the updated page
-					self.page = pywikibot.ItemPage(enwd, self.wd_value)
-			
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
-						# print("Reference added.")
-					if qualifier_id and qualval_id:
-						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
-						# print("Qualifier added.")
-
-		except:
-			print('Error in adding new property.')
+		# except:
+		# 	print('Error in adding new property.')
 
 		return 0
 
-	def addFiles(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
+	def addFiles(self, prop_id='', prop_value='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds files from Commons to Wikidata """
 
 		print(self.page.title())
@@ -466,15 +477,15 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new file')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
-				if qualifier_id:
-					if qualval_id:
-						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
-					elif qualval:
-						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+				if qualifier_id and qualval_id:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
 			else:
 				# confirmation
@@ -484,22 +495,22 @@ class WdPage:
 					self.page.addClaim(new_prop, summary = u'Adding new file')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 						# print("Reference added.")
-					if qualifier_id:
-						if qualval_id:
-							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
-						elif qualval:
-							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					if qualifier_id and qualval_id:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
 
 		except:
 			print('Error in adding new file.')
 
 		return 0
 
-	def addMonolingualText(self, prop_id='', prop_value='', text_language='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addMonolingualText(self, prop_id='', prop_value='', text_language='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -540,12 +551,15 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new string/monolingual text')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
 			else:
 				# confirmation
@@ -555,12 +569,15 @@ class WdPage:
 					self.page.addClaim(new_prop, summary = u'Adding new string/monolingual text')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 						# print("Reference added.")
 					if qualifier_id and qualval_id:
 						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
 
 		except:
 			print('Error in adding monolingual text.')
@@ -568,7 +585,7 @@ class WdPage:
 		return 0
 
 
-	def addNumeric(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addNumeric(self, prop_id='', prop_value='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -609,12 +626,15 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new numeric value')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
 			else:
 				# confirmation
@@ -624,19 +644,22 @@ class WdPage:
 					self.page.addClaim(new_prop, summary = u'Adding new numeric value')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 						# print("Reference added.")
 					if qualifier_id and qualval_id:
 						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
 
 		except:
 			print('Error in adding numeric value.')
 
 		return 0
 
-	def addCoordinates(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addCoordinates(self, prop_id='', prop_value='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds coordinates to Wikidata """
 
 		print(self.page.title())
@@ -681,12 +704,15 @@ class WdPage:
 				self.page.addClaim(new_prop, summary=u'Importing new coordinate')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
 			else:
 				# confirmation
@@ -696,17 +722,20 @@ class WdPage:
 					self.page.addClaim(new_prop, summary = u'Importing new coordinate')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 						# print("Reference added.")
 					if qualifier_id and qualval_id:
 						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
 
 		except:
 			print('Error in adding numeric value.')
 
-	def addDate(self, prop_id='', date='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addDate(self, prop_id='', date='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -775,12 +804,15 @@ class WdPage:
 						self.page.addClaim(new_prop, summary = u'Adding new date')
 						self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-						if lang:
-							self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+						if lang or source_id or sourceval_id or sourceval:
+							self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 							# print("Reference added.")
 						if qualifier_id and qualval_id:
 							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 							# print("Qualifier added.")
+						elif qualifier_id and qualval:
+							self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+							# print("Qualifier added.") 
 
 					else:
 						# confirmation
@@ -790,19 +822,22 @@ class WdPage:
 							self.page.addClaim(new_prop, summary = u'Adding new date')
 							self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-							if lang:
-								self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+							if lang or source_id or sourceval_id or sourceval:
+								self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 								# print("Reference added.")
 							if qualifier_id and qualval_id:
 								self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 								# print("Qualifier added.")
+							elif qualifier_id and qualval:
+								self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+								# print("Qualifier added.") 
 
 				except:
 					print('Error in adding numeric value.\n')
 		return 0
 
 
-	def addIdentifiers(self, prop_id='', prop_value='', lang='', qualifier_id='', qualval_id='', confirm='', overwrite='', append=''):
+	def addIdentifiers(self, prop_id='', prop_value='', lang='', source_id='', sourceval_id='', sourceval='', qualifier_id='', qualval='', qualval_id='', confirm='', overwrite='', append=''):
 		""" Adds numeric values to Wikidata """
 
 		print(self.page.title())
@@ -840,12 +875,15 @@ class WdPage:
 				self.page.addClaim(new_prop, summary = u'Adding new identifier')
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-				if lang:
-					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+				if lang or source_id or sourceval_id or sourceval:
+					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
+				elif qualifier_id and qualval:
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+					# print("Qualifier added.") 
 
 			else:
 				# confirmation
@@ -855,12 +893,15 @@ class WdPage:
 					self.page.addClaim(new_prop, summary = u'Adding new identifier')
 					self.page = pywikibot.ItemPage(enwd, self.wd_value)
 
-					if lang:
-						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, status=1)
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 						# print("Reference added.")
 					if qualifier_id and qualval_id:
 						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
 
 		except:
 			print('Error in adding identifier.')
@@ -911,7 +952,7 @@ class WdPage:
 		return 0
 
 
-	def addImportedFrom(self, repo=repo, prop_id='', prop_value='', claim='', lang='', status=0):
+	def addImportedFrom(self, repo=repo, prop_id='', prop_value='', claim='', lang='', source_id='', sourceval_id='', sourceval='', status=0):
 		"""
 		Adds a reference/source
 
@@ -945,6 +986,37 @@ class WdPage:
 			self.page = pywikibot.ItemPage(enwd, self.wd_value)
 			print('Reference/Source added successfully.\n')
 
+		if type(source_id) is list:
+			i = 0
+			for val_id in source_id:
+				if val_id == 'P143' and lang:
+					continue
+				if sourceval_id:
+					source_val = pywikibot.ItemPage(repo, sourceval_id[i])
+				elif sourceval:
+					source_val = sourceval[i]
+
+				source = pywikibot.Claim(repo, val_id)
+				source.setTarget(source_val)
+				claim.addSource(source, summary='Adding 1 source')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+				print('source added successfully.\n')
+
+				i += 1
+
+		else:
+			if sourceval_id:
+				source_val = pywikibot.ItemPage(repo, sourceval_id)
+			elif sourceval:
+				source_val = sourceval
+
+			if repo and claim and source_id:
+				source = pywikibot.Claim(repo, source_id)
+				source.setTarget(source_val)
+				claim.addSource(source, summary='Adding 1 source')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+				print('source added successfully.\n')
+
 		return 0
 
 	def addQualifiers(self, repo=repo, prop_id='', prop_value='', claim='', qualifier_id='', qualval='', qualval_id='', status=0):
@@ -969,17 +1041,34 @@ class WdPage:
 		if status == 0:
 			claim = self.checkClaimExistence(claim)
 
-		if qualval_id:
-			qualifier_val = pywikibot.ItemPage(repo, qualval_id)
-		elif qualval:
-			qualifier_val = qualval
+		if type(qualifier_id) is list:
+			i = 0
+			for qual_id in qualifier_id:
+				if qualval_id:
+					qualifier_val = pywikibot.ItemPage(repo, qualval_id[i])
+				elif qualval:
+					qualifier_val = qualval[i]
 
-		if repo and claim and qualifier_id:
-			qualifier = pywikibot.Claim(repo, qualifier_id)
-			qualifier.setTarget(qualifier_val)
-			claim.addQualifier(qualifier, summary='Adding 1 qualifier')
-			self.page = pywikibot.ItemPage(enwd, self.wd_value)
-			print('Qualifier added successfully.\n')
+				qualifier = pywikibot.Claim(repo, qual_id)
+				qualifier.setTarget(qualifier_val)
+				claim.addQualifier(qualifier, summary='Adding 1 qualifier')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+				print('Qualifier added successfully.\n')
+
+				i += 1
+
+		else:
+			if qualval_id:
+				qualifier_val = pywikibot.ItemPage(repo, qualval_id)
+			elif qualval:
+				qualifier_val = qualval
+
+			if repo and claim and qualifier_id:
+				qualifier = pywikibot.Claim(repo, qualifier_id)
+				qualifier.setTarget(qualifier_val)
+				claim.addQualifier(qualifier, summary='Adding 1 qualifier')
+				self.page = pywikibot.ItemPage(enwd, self.wd_value)
+				print('Qualifier added successfully.\n')
 
 		return 0
 
