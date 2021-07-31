@@ -134,7 +134,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 
 	# wd_page = base.WdPage(wd_value='Q4115189')
 
-	# addition of source
+	# addition of source url
 	import_url = 'https://en.wikipedia.org/w/index.php?title=%s&oldid=%s' % (wp_page.title.replace(' ', '_'), wp_page.latest_revision_id)
 
 	""" import details into Wikidata """
@@ -157,6 +157,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 			print('Missing native language.')
 
 	elif prop_id in wikibase_item:
+		# check for string or link to Wp article ('[[<Wp article name>')
 		if '[' not in prop_value:
 			print('Simple string present. Skipping...')
 			return 1

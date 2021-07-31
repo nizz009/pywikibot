@@ -317,6 +317,8 @@ class WdPage:
 		@param prop_id: ID of the property
 		@param prop_value: ID or Value of property's value
 		@param lang: language of Wikipedia artcile: for references
+		@param sourceval_id: ID of the source
+		@param sourceval_id: ID of the source's value
 		@param qualifier_id: ID of the qualifier
 		@param qualval_id: ID of the qualifier's value
 		@param confirm: set to 'y' to avoid the confirmation message before adding a property
@@ -344,7 +346,6 @@ class WdPage:
 						for itemfoundq in m:
 							itemfound = pywikibot.ItemPage(repo, itemfoundq)
 							item_dict = itemfound.get()
-							# print(prop_value)
 							# print(item_dict['labels']['en'])
 							# print('\n')
 							flag = 0
@@ -358,9 +359,8 @@ class WdPage:
 										break
 							if flag:
 								continue
-
+								
 							if prop_value.lower() == (item_dict['labels']['en']).lower():
-								# print('hello')
 								# new_prop_val = pywikibot.ItemPage(enwd, itemfoundq)
 								ids.append(itemfoundq)
 						if len(ids) > 1:
@@ -395,46 +395,46 @@ class WdPage:
 				print("Invalid choice.\n")
 				return 1
 	
-		# try:
-		new_prop = pywikibot.Claim(enwd, prop_id)	
-		new_prop.setTarget(new_prop_val)
+		try:
+			new_prop = pywikibot.Claim(enwd, prop_id)	
+			new_prop.setTarget(new_prop_val)
 
-		# confirmation
-		if confirm.lower() == 'y':
-			self.page.addClaim(new_prop, summary = u'Adding new property')
-			# retrieving the updated page
-			self.page = pywikibot.ItemPage(enwd, self.wd_value)
-	
-			if lang or source_id or sourceval_id or sourceval:
-				self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
-				# print("Reference added.")
-			if qualifier_id and qualval_id:
-				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
-				# print("Qualifier added.")
-			elif qualifier_id and qualval:
-				self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
-				# print("Qualifier added.") 
-
-		else:
-			print(new_prop)
-			text = input("Do you want to save this property? (y/n) ")
-			if text == 'y':
+			# confirmation
+			if confirm.lower() == 'y':
 				self.page.addClaim(new_prop, summary = u'Adding new property')
 				# retrieving the updated page
 				self.page = pywikibot.ItemPage(enwd, self.wd_value)
-		
+
 				if lang or source_id or sourceval_id or sourceval:
 					self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
 					# print("Reference added.")
 				if qualifier_id and qualval_id:
-					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, qualval=qualval, status=1)
+					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, status=1)
 					# print("Qualifier added.")
 				elif qualifier_id and qualval:
 					self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
 					# print("Qualifier added.") 
 
-		# except:
-		# 	print('Error in adding new property.')
+			else:
+				print(new_prop)
+				text = input("Do you want to save this property? (y/n) ")
+				if text == 'y':
+					self.page.addClaim(new_prop, summary = u'Adding new property')
+					# retrieving the updated page
+					self.page = pywikibot.ItemPage(enwd, self.wd_value)
+			
+					if lang or source_id or sourceval_id or sourceval:
+						self.addImportedFrom(repo=repo, claim=new_prop, lang=lang, source_id=source_id, sourceval_id=sourceval_id, sourceval=sourceval, status=1)
+						# print("Reference added.")
+					if qualifier_id and qualval_id:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval_id=qualval_id, qualval=qualval, status=1)
+						# print("Qualifier added.")
+					elif qualifier_id and qualval:
+						self.addQualifiers(repo=repo, claim=new_prop, qualifier_id=qualifier_id, qualval=qualval, status=1)
+						# print("Qualifier added.") 
+
+		except:
+			print('Error in adding new property.')
 
 		return 0
 
