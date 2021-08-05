@@ -11,7 +11,6 @@ import base_ops as base
 prop_ids = {
 	'country': 'P17',
 	'image': 'P18',
-	'leaders': 'P35',
 	'flag': 'P41',
 	'logo': 'P154',
 	'garrison': 'P159',
@@ -29,14 +28,12 @@ prop_ids = {
 	'general_secretary': 'P3975',
 	'youth_wing': 'P4379',
 	'other_name': 'P4970',
-	'opponents': 'P7047',
-	'enemy': 'P7047',
 	'merger': 'P7888',
 }
 
 # segragating properties to use appropriate methods while importing
-wikibase_item = ['P17', 'P35', 'P159', 'P407', 'P607', 'P945', 'P1365', 
-				'P3975', 'P4379', 'P7047', 'P7888']
+wikibase_item = ['P17', 'P159', 'P407', 'P607', 'P945', 'P1365', 
+				'P3975', 'P4379', 'P7888']
 # files, images, etc.
 commons_media = ['P18', 'P41', 'P154']
 # dates, etc.
@@ -107,7 +104,9 @@ def checkExistence(claim='', prop_id='', prop_value='',):
 	return False
 
 def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
-	""" check for previous existence of property-value pair in page """
+	""" Adds info to Wikidata """
+
+	# check for previous existence of property-value pair in page
 	for prop_claim in wd_page.page.claims:
 		items = wd_page.page.claims[prop_claim]
 

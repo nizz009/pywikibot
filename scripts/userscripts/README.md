@@ -6,7 +6,7 @@
 Contains basic operations/resuable code for working with Wikipedia and Wikidata pages.
 
 ##### [Recti/Modi]fications:
-1. Add methods to add coordinates and maps in Wikidata
+1. Add methods to add coordinates and maps in Wikidata (DONE)
 
 #### search_patterns.py
 Extracts information from the Wikipedia articles
