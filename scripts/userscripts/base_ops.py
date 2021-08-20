@@ -237,12 +237,22 @@ class WpPage:
 			text_screened = re.findall(r'\{\{Infobox .*[\n]*', self.page.text, re.DOTALL)
 			if text_screened:
 				text = text_screened[0].split('==')
-				text = text[0].split('\n}}')
-				result = search_patterns.infobox(page_text=text[0], check_all=check_all)
-				# search_patterns.infobox(self.page.text)
-				if result:
+				text = text[0].rsplit('\n}}')
+
+				result = list()
+				for txt in text:
+					if re.search(r'{{Infobox', txt, re.IGNORECASE):
+						# print(txt)
+						res = search_patterns.infobox(page_text=txt, check_all=check_all)
+						# search_patterns.infobox(self.page.text)
+						# print(res)
+						if res:
+							result.append(res)
+				if len(result) == 1:
+					return result[0]
+				else:
 					return result
-				return ''
+			return ''
 		else:
 			print('No page exists.')
 			return None

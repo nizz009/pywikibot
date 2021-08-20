@@ -1,32 +1,28 @@
-# File name: historicplaces_riverhead_ny.py
-# https://en.wikipedia.org/wiki/National_Register_of_Historic_Places_listings_in_Riverhead_(town),_New_York
+# File name: historicplaces_browncounty_wisconsin.py
+# https://en.wikipedia.org/wiki/National_Register_of_Historic_Places_listings_in_Brown_County,_Wisconsin
 
 import re
 import pywikibot
 import dateparser
 import base_ops as base
+import search_patterns
 
 # properties to be imported
 prop_ids = {
 	'image': 'P18',
-	'architecture': 'P149',
 	'location': 'P276',
-	'built': 'P571',
 	'coordinates': 'P625',
 	'refnum': 'P649',
-	'caption': 'P2096',
 }
 
 # segragating properties to use appropriate methods while importing
-wikibase_item = ['P149', 'P276']
+wikibase_item = ['P276']
 # files, images, etc.
 commons_media = ['P18']
-# dates, etc.
-time = ['P571']
 coordinates = ['P625']
 identifier = ['P649']
 # properties which ideally contain only one value
-single_values = ['P149', 'P571', 'P625', 'P649']
+single_values = ['P276', 'P625', 'P649']
 
 lang = 'en'
 
@@ -41,29 +37,8 @@ def checkExistence(claim='', prop_id='', prop_value='',):
 	"""
 	try:
 		item_value = claim.getTarget()
-		if prop_id in time:
-			flag = 0
-			date = prop_value.split()
-			try:
-				if len(date) == 3:
-					import_date = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
-					if import_date.year == item_value.year and import_date.month == item_value.month and import_date.day == item_value.day:
-						flag = 1
-				elif len(date) == 2:
-					import_date = dateparser.parse(str(date[0])+' '+str(date[1]))
-					if import_date.year == item_value.year and import_date.month == item_value.month:
-						flag = 1
-				elif len(date) == 1:
-					import_date = dateparser.parse(str(date[0]))
-					if import_date.year == item_value.year:
-						flag = 1
-			except:
-				print('Error in extracting date.\n')
-				return True
-			if flag:
-				return True
 		
-		elif prop_id in commons_media:
+		if prop_id in commons_media:
 			wd_propval = item_value.title()
 			wd_propval = wd_propval.replace('File:', '').replace('Image:', '').replace('image:', '').lower()
 			article_file = prop_value.replace('File:', '').replace('Image:', '').replace('image:', '').lower()
@@ -127,16 +102,13 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 							print('Same property-value exist in the page as qualifier. Skipping...')
 							return 1
 
-	wd_page = base.WdPage(wd_value='Q4115189')
+	# wd_page = base.WdPage(wd_value='Q4115189')
 
 	# addition of source url
 	import_url = 'https://en.wikipedia.org/w/index.php?title=%s&oldid=%s' % (wp_page.title.replace(' ', '_'), wp_page.latest_revision_id)
 
 	""" import details into Wikidata """
-	if prop_id in time:
-		wd_page.addDate(prop_id=prop_id, date=prop_value, lang=lang, source_id='P4656', sourceval=import_url, confirm='y', append='y')
-
-	elif prop_id in commons_media:
+	if prop_id in commons_media:
 		# setting captions/media legend for images
 		if prop_id == 'P18' and 'caption' in prop_list.keys():
 			caption_string = str(prop_list['caption']).replace('[', '').replace(']', '')
@@ -168,7 +140,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 	return 0
 
 def main():
-	page_name = 'National Register of Historic Places listings in Riverhead (town), New York'
+	page_name = 'National Register of Historic Places listings in Brown County, Wisconsin'
 
 	wp_list = base.WpPage(page_name)
 	# wp_list.printWpContents()
@@ -176,59 +148,60 @@ def main():
 	""" Retrieving names of the Wp articles """
 	contents = wp_list.getWpContents()
 	list_items = re.split(r'==[\w\s]*==', contents)[1]
+	indiv_items = re.split(r'{{NRHP row', list_items)
 
-	article_names = re.findall(r'\|article\=(.+)', list_items)
-
-	# i = 0
-	rows = list()
-	for article_name in article_names:
-		wp_page = base.WpPage(article_name)
-
-		# check for existence of page
-		if wp_page.getWpContents():
-			print(wp_page.title)
-
-			""" Extracting info from infobox and adding to Wikidata """
-			# find info from the infobox
-			info = wp_page.findInfobox(check_all='y')
-
-			# get the Wd page
-			wd_page = ''
-			try:
-				wd_page = base.WdPage(page_name=wp_page.title)
-			except:
-				pass
-
-			wd_page = base.WdPage(wd_value='Q4115189')
-
-			if info and wd_page:
-				# iterate through each info extracted from infobox
-				for prop in info.keys():
-					print(str(prop) + ': ' + str(info[prop]))
-					try:
-						# multiple values for a prop - add each value separately
-						if type(info[prop]) is list:
-							for val in info[prop]:
-								try:
-									addToWd(wp_page=wp_page, wd_page=wd_page, prop_id=prop_ids[str(prop)], prop_value=val, prop_list=info)
-								except:
-									print('Error adding property.')
-									continue
-						else:
-							addToWd(wp_page=wp_page, wd_page=wd_page, prop_id= prop_ids[str(prop)], prop_value=info[prop], prop_list=info)
-
-						print('\n')
-					except:
-						pass
-
-		else:
-			print('No such page exists. Skipping...\n')
+	for item in indiv_items:
+		# print(item)
+		article_name = re.findall(r'\|article\=(.+)', item)
+		if not article_name:
 			continue
+		wp_page = base.WpPage(article_name[0])
+		# print(article_name)
 
-		# if i < 25:
-		# 	i += 1
-		# else:
-		# 	break
+		if wp_page.getWpContents():
+				print(wp_page.title)
+
+		# get the Wd page
+		wd_page = ''
+		try:
+			wd_page = base.WdPage(page_name=wp_page.title)
+		except:
+			print('no wd page exists.\n')
+			pass
+		
+		# wd_page = base.WdPage(wd_value='Q4115189')
+
+		if wd_page:
+			properties = search_patterns.search_prop(item)
+			for prop in properties:
+				# print(prop)
+				prop_val = search_patterns.search_prop_value(page_text=item, word=prop)
+				print(str(prop) + ': ' + str(prop_val))
+				
+				try:
+					# multiple values for a prop - add each value separately
+					if type(prop_val) is list:
+						for val in prop_val:
+							try:
+								addToWd(wp_page=wp_page, wd_page=wd_page, prop_id=prop_ids[str(prop)], prop_value=val, prop_list=properties)
+							except:
+								print('Error adding property.')
+								continue
+					else:
+						addToWd(wp_page=wp_page, wd_page=wd_page, prop_id= prop_ids[str(prop)], prop_value=prop_val, prop_list=properties)
+
+					print('\n')
+				except:
+					pass
+
+			else:
+				print('No such page exists. Skipping...\n')
+				continue
+
+				# if i < 25:
+				# 	i += 1
+				# else:
+				# 	break
 
 if __name__ == "__main__":
 	main()

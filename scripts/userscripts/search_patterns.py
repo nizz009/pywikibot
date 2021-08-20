@@ -76,7 +76,7 @@ def date_val(page_text='', word=''):
 # INFOBOX #
 
 """
-def search_infobox_prop(page_text=''):
+def search_prop(page_text=''):
 	"""
 	Searches for all the properties in the infobox
 
@@ -96,7 +96,7 @@ def search_infobox_prop(page_text=''):
 
 	return 0
 
-def search_infobox_value(page_text='', word=''):
+def search_prop_value(page_text='', word=''):
 	"""
 	Searches for information from the infobox
 
@@ -131,9 +131,9 @@ def infobox(page_text='', word='', check_all=''):
 		return None
 
 	if word:
-		print(search_infobox_value(page_text=page_text, word=word))
+		print(search_prop_value(page_text=page_text, word=word))
 	else:
-		properties = search_infobox_prop(page_text=page_text)
+		properties = search_prop(page_text=page_text)
 		print('Found ' + str(len(properties)) + ' properties.\n')
 		indices = list()
 
@@ -163,7 +163,7 @@ def infobox(page_text='', word='', check_all=''):
 				if 'date' in prop:
 					value = date_val(page_text=page_text, word=prop)
 				else:
-					value = search_infobox_value(page_text=page_text, word=prop)
+					value = search_prop_value(page_text=page_text, word=prop)
 				# print(value)
 				try:
 					propval_pair[str(prop)] = value[0]
@@ -176,7 +176,7 @@ def infobox(page_text='', word='', check_all=''):
 				if 'date' in prop:
 					value = date_val(page_text=page_text, word=prop)
 				else:
-					value = search_infobox_value(page_text=page_text, word=prop)
+					value = search_prop_value(page_text=page_text, word=prop)
 				try:
 					if len(value) == 1:
 						propval_pair[str(prop)] = value[0]
