@@ -1,21 +1,18 @@
 # File name: ships.py
-# https://en.wikipedia.org/wiki/National_Register_of_Historic_Places_listings_in_Riverhead_(town),_New_York
 
 import re
 import pywikibot
 import dateparser
+import datetime
 import base_ops as base
+
+enwd = pywikibot.Site('wikidata', 'wikidata')
+repo = enwd.data_repository()
 
 """ 
 =========================
 Properties to be imported
 =========================
-"""
-
-"""
-image, caption
-country
-significant events = p793
 """
 prop_ids = {
 	'image': 'P18',
@@ -35,15 +32,11 @@ propval_ids = {
 }
 
 # segragating properties to use appropriate methods while importing
-wikibase_item = ['P149', 'P276']
+wikibase_item = ['P176', 'P8047']
 # files, images, etc.
 commons_media = ['P18']
-# dates, etc.
-time = ['P571']
-coordinates = ['P625']
-identifier = ['P649']
 # properties which ideally contain only one value
-single_values = ['P149', 'P571', 'P625', 'P649']
+single_values = ['P176', 'P1451', 'P8047']
 
 lang = 'en'
 
@@ -66,7 +59,6 @@ def valParser(found_items=''):
 		found_item = found_item.replace('\'', '')
 		found_item = found_item.split('<br>')
 		for item in found_item:
-			# item = re.sub(r'\(.*\)?', '', item)
 			item = re.sub(r'[\<].*?[\>]', '', item)
 			item = re.sub(r'\<.*', '', item)
 			# print(item)
@@ -172,29 +164,8 @@ def checkExistence(claim='', prop_id='', prop_value=''):
 	"""
 	try:
 		item_value = claim.getTarget()
-		if prop_id in time:
-			flag = 0
-			date = prop_value.split()
-			try:
-				if len(date) == 3:
-					import_date = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
-					if import_date.year == item_value.year and import_date.month == item_value.month and import_date.day == item_value.day:
-						flag = 1
-				elif len(date) == 2:
-					import_date = dateparser.parse(str(date[0])+' '+str(date[1]))
-					if import_date.year == item_value.year and import_date.month == item_value.month:
-						flag = 1
-				elif len(date) == 1:
-					import_date = dateparser.parse(str(date[0]))
-					if import_date.year == item_value.year:
-						flag = 1
-			except:
-				print('Error in extracting date.\n')
-				return True
-			if flag:
-				return True
-		
-		elif prop_id in commons_media:
+
+		if prop_id in commons_media:
 			wd_propval = item_value.title()
 			wd_propval = wd_propval.replace('File:', '').replace('Image:', '').replace('image:', '').lower()
 			article_file = prop_value.replace('File:', '').replace('Image:', '').replace('image:', '').lower()
@@ -209,23 +180,11 @@ def checkExistence(claim='', prop_id='', prop_value=''):
 			if prop_value_refined.lower() == wdpage_value:
 				return True
 
-		elif prop_id in coordinates:
-			if prop_value and '|' in prop_value:
-				coord_value = prop_value.split('|')
-				try:
-					lat, lon, precision = base.calc_coord(coord_value)
-				except:
-					print('Something went wrong while adding coordinates.')
-					return 1
+		elif prop_id == 'P793':
+			wd_propval = item_value.title()
+			if prop_value == wd_propval:
+				return True
 
-			if precision > 0 and lat == item_value.lat and lon == item_value.lon and precision == item_value.precision:
-				print('Same property-value exist in the page already. Skipping...')
-				return 1
-
-		elif prop_id in identifier:
-			if prop_value == item_value:
-				print('Same property-value exist in the page already. Skipping...')
-				return 1	
 	except:
 		pass
 
@@ -264,10 +223,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 	import_url = 'https://en.wikipedia.org/w/index.php?title=%s&oldid=%s' % (wp_page.title.replace(' ', '_'), wp_page.latest_revision_id)
 
 	""" import details into Wikidata """
-	if prop_id in time:
-		wd_page.addDate(prop_id=prop_id, date=prop_value, lang=lang, source_id='P4656', sourceval=import_url, confirm='y', append='y')
-
-	elif prop_id in commons_media:
+	if prop_id in commons_media:
 		# setting captions/media legend for images
 		if prop_id == 'P18' and 'caption' in prop_list.keys():
 			caption_string = str(prop_list['caption']).replace('[', '').replace(']', '')
@@ -290,12 +246,83 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 		except:
 			print('Error adding new wd property.')
 
-	elif prop_id in coordinates:
-		wd_page.addCoordinates(prop_id=prop_id, prop_value=prop_value, lang=lang, confirm='y', append='y')
+	elif prop_id == 'P793':
+		wd_page.addWdProp(prop_id='P793', prop_value=prop_value, lang=lang, source_id='P4656', sourceval=import_url, confirm='y', append='y')
 
-	elif prop_id in identifier:
-		wd_page.addIdentifiers(prop_id=prop_id, prop_value=prop_value, lang=lang, confirm='y', append='y')
+	return 0
 
+def addDateQualifier(wd_page='', prop_id='', prop_val='', qual_id='', date=''):
+	""" Adds date as a qualifier (Point of time) """
+
+	# convert to appropriate format
+	if date and not re.search(r'\d-\d-\d', date, re.IGNORECASE):
+		date = date.split()
+		try:
+			if len(date) == 3:
+				value = dateparser.parse(str(date[0])+' '+str(date[1])+' '+str(date[2]))
+				date = str(value.year) + '-' + str(value.month) + '-' + str(value.day)
+			elif len(date) == 2:
+				value = dateparser.parse(str(date[0])+' '+str(date[1]))
+				date = str(value.year) + '-' + str(value.month)
+			elif len(date) == 1:
+				value = dateparser.parse(str(date[0]))
+				date = str(value.year)
+		except:
+			print('Error in extracting date.\n')
+			return
+
+	if date and date != '0-0-0':
+
+		# check for previous existence of property-value pair in page
+		for prop_claim in wd_page.page.claims:
+			if prop_id == prop_claim:
+				items = wd_page.page.claims[prop_claim]
+
+				# checks for prop-val pairs in qualifiers
+				for item in items:
+					for qualifier in item.qualifiers:
+						if qual_id == qualifier:
+							qual_items = item.qualifiers[qualifier]
+							for qual_item in qual_items:
+								if checkExistence(claim=qual_item, prop_id=prop_id, prop_value=prop_val):
+									print('Same property-value exist in the page as qualifier. Skipping...')
+									return 1
+
+		# checks validity of date
+		now = datetime.datetime.now()
+
+		check_ok = True
+		if int(date.split('-')[0]) > now.year:
+			check_ok = False
+		try:
+			if int(date.split('-')[0]) == now.year and int(date.split('-')[1]) > now.month:
+				check_ok = False
+		except:
+			print("Invalid date.\n")
+			pass
+
+		if check_ok:
+			for prop_claim in wd_page.page.claims:
+				if prop_id == prop_claim:
+					items = wd_page.page.claims[prop_claim]
+					try:
+						for item in items:
+							if item.getTarget().title() == prop_val:
+								qualifier = pywikibot.Claim(repo, qual_id)
+
+								if len(date.split('-')) == 3:
+									qualifier.setTarget(pywikibot.WbTime(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2])))
+								elif len(date.split('-')) == 2:
+									qualifier.setTarget(pywikibot.WbTime(year=int(date.split('-')[0]), month=int(date.split('-')[1])))
+								elif len(date.split('-')) == 1:
+									qualifier.setTarget(pywikibot.WbTime(year=int(date.split('-')[0])))
+
+								item.addQualifier(qualifier, summary='Adding 1 qualifier')
+								wd_page.page = pywikibot.ItemPage(enwd, wd_page.wd_value)
+								print('Qualifier added successfully.\n')
+
+					except:
+						print('Error in adding date qualifier.\n')
 	return 0
 
 def main():
@@ -339,30 +366,38 @@ def main():
 					wdprop = prop
 					if re.search(r'Ship\s*[\w]+', prop, re.IGNORECASE):
 						wdprop = re.sub(r'Ship\s*', '', prop, flags=re.IGNORECASE)
+					wdprop = wdprop.strip()
 					print(str(wdprop) + ': ' + str(info[prop]))
-					# try:
-					# 	# multiple values for a prop - add each value separately
-					# 	if type(info[prop]) is list:
-					# 		for val in info[prop]:
-					# 			try:
-					# 				addToWd(wp_page=wp_page, wd_page=wd_page, prop_id=prop_ids[str(wdprop)], prop_value=val, prop_list=info)
-					# 			except:
-					# 				print('Error adding property.')
-					# 				continue
-					# 	else:
-					# 		addToWd(wp_page=wp_page, wd_page=wd_page, prop_id= prop_ids[str(wdprop)], prop_value=info[prop], prop_list=info)
+					if wdprop in prop_ids:
+						try:
+							# multiple values for a prop - add each value separately
+							if type(info[prop]) is list:
+								for val in info[prop]:
+									try:
+										addToWd(wp_page=wp_page, wd_page=wd_page, prop_id=prop_ids[str(wdprop)], prop_value=val, prop_list=info)
+									except:
+										print('Error adding property.')
+										continue
+							else:
+								addToWd(wp_page=wp_page, wd_page=wd_page, prop_id= prop_ids[str(wdprop)], prop_value=info[prop], prop_list=info)
 
-					# 	print('\n')
-					# except:
-					# 	pass
+							print('\n')
+						except:
+							pass
+					elif wdprop in propval_ids:
+						try:
+							# wd_page = base.WdPage(wd_value='Q4115189')
+							significant_event = addToWd(wp_page=wp_page, wd_page=wd_page, prop_id='P793', prop_value=propval_ids[wdprop])
+							wd_page = base.WdPage(wd_value='Q4115189')
+							if not significant_event:
+								print('hi')
+								addDateQualifier(wd_page=wd_page, prop_id='P793', prop_val=propval_ids[wdprop], qual_id='P585', date=info[prop])
+						except:
+							print('Error adding significant event.')
+
 
 	else:
 		print('No such page exists. Skipping...\n')
-
-		# if i < 25:
-		# 	i += 1
-		# else:
-		# 	break
 
 if __name__ == "__main__":
 	main()
