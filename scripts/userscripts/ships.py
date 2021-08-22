@@ -1,4 +1,5 @@
 # File name: ships.py
+# Retrieves information from the infoboxes for ships and imports to Wikidata
 
 import re
 import pywikibot
@@ -16,6 +17,7 @@ Properties to be imported
 """
 prop_ids = {
 	'image': 'P18',
+	'namesake': 'P138',
 	'builder': 'P176', # manufacturer
 	'manufacturer': 'P176',
 	'motto': 'P1451', # motto text
@@ -32,7 +34,7 @@ propval_ids = {
 }
 
 # segragating properties to use appropriate methods while importing
-wikibase_item = ['P176', 'P8047']
+wikibase_item = ['P138', 'P176', 'P8047']
 # files, images, etc.
 commons_media = ['P18']
 # properties which ideally contain only one value
@@ -92,9 +94,10 @@ def searchProp(text=''):
 
 def searchPropValue(text='', word=''):
 	"""
-	Searches for information from the infobox
+	Searches for values of the properties from infobox
 
 	@params text: text of the Wp page
+	@params word: word whose corresponding value is to be searched for
 	@return value: list of values 
 
 	"""
@@ -119,6 +122,13 @@ def searchPropValue(text='', word=''):
 	return 0
 
 def searchInfobox(text=''):
+	"""
+	Searches for information from the infobox
+
+	@params text: text of the Wp page
+	@return value (dict): list of values 
+
+	"""
 	# print(text)
 	if not text:
 		print('No text is present.\n')
@@ -217,7 +227,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 							print('Same property-value exist in the page as qualifier. Skipping...')
 							return 1
 
-	wd_page = base.WdPage(wd_value='Q4115189')
+	# wd_page = base.WdPage(wd_value='Q4115189')
 
 	# addition of source url
 	import_url = 'https://en.wikipedia.org/w/index.php?title=%s&oldid=%s' % (wp_page.title.replace(' ', '_'), wp_page.latest_revision_id)
@@ -225,8 +235,13 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 	""" import details into Wikidata """
 	if prop_id in commons_media:
 		# setting captions/media legend for images
-		if prop_id == 'P18' and 'caption' in prop_list.keys():
-			caption_string = str(prop_list['caption']).replace('[', '').replace(']', '')
+		caption = ''
+		for prop in prop_list.keys():
+			if 'caption' in prop:
+				caption = prop
+				break
+		if prop_id == 'P18' and caption:
+			caption_string = str(prop_list[caption]).replace('[', '').replace(']', '')
 			caption = pywikibot.WbMonolingualText(text=caption_string, language=lang)
 			wd_page.addFiles(prop_id=prop_id, prop_value=prop_value, lang=lang, source_id='P4656', sourceval=import_url, qualifier_id='P2096', qualval=caption, confirm='y', append='y')
 		else:
@@ -239,20 +254,34 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 			return 1
 
 		try:
+			partition = '[['
+			if partition in prop_value:
+				prop_value = prop_value.partition(partition)[2]
 			prop_value = prop_value.replace('[', '').replace(']', '')
 			value_wp_page = base.WpPage(prop_value.strip())
 			value_wd_page = base.WdPage(page_name=value_wp_page.title)
 			wd_page.addWdProp(prop_id=prop_id, prop_value=value_wd_page.wd_value, lang=lang, source_id='P4656', sourceval=import_url, confirm='y', append='y')
+
 		except:
 			print('Error adding new wd property.')
 
+	# import of significant events
 	elif prop_id == 'P793':
 		wd_page.addWdProp(prop_id='P793', prop_value=prop_value, lang=lang, source_id='P4656', sourceval=import_url, confirm='y', append='y')
 
 	return 0
 
 def addDateQualifier(wd_page='', prop_id='', prop_val='', qual_id='', date=''):
-	""" Adds date as a qualifier (Point of time) """
+	""" 
+	Adds date as a qualifier (Point of time)
+
+	@param wd_page: Wd page where qualifier is to be added
+	@param prop_id: property id of the claim
+	@param prop_val: prop val (QID) of val whose qualifier is to be added
+	@param qual_id: qualifier's property id
+	@param date: qualifier's date
+
+	"""
 
 	# convert to appropriate format
 	if date and not re.search(r'\d-\d-\d', date, re.IGNORECASE):
@@ -326,7 +355,7 @@ def addDateQualifier(wd_page='', prop_id='', prop_val='', qual_id='', date=''):
 	return 0
 
 def main():
-	article_name = 'HMS Hood'
+	article_name = 'INS Kochi'
 	wp_page = base.WpPage(article_name)
 
 	# check for existence of page
@@ -386,11 +415,9 @@ def main():
 							pass
 					elif wdprop in propval_ids:
 						try:
-							# wd_page = base.WdPage(wd_value='Q4115189')
 							significant_event = addToWd(wp_page=wp_page, wd_page=wd_page, prop_id='P793', prop_value=propval_ids[wdprop])
-							wd_page = base.WdPage(wd_value='Q4115189')
+							# wd_page = base.WdPage(wd_value='Q4115189')
 							if not significant_event:
-								print('hi')
 								addDateQualifier(wd_page=wd_page, prop_id='P793', prop_val=propval_ids[wdprop], qual_id='P585', date=info[prop])
 						except:
 							print('Error adding significant event.')
