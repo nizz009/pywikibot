@@ -127,7 +127,7 @@ def addToWd(wp_page='', wd_page='', prop_id='', prop_value='', prop_list=''):
 							print('Same property-value exist in the page as qualifier. Skipping...')
 							return 1
 
-	wd_page = base.WdPage(wd_value='Q4115189')
+	# wd_page = base.WdPage(wd_value='Q4115189')
 
 	# addition of source url
 	import_url = 'https://en.wikipedia.org/w/index.php?title=%s&oldid=%s' % (wp_page.title.replace(' ', '_'), wp_page.latest_revision_id)
@@ -199,7 +199,7 @@ def main():
 			except:
 				pass
 
-			wd_page = base.WdPage(wd_value='Q4115189')
+			# wd_page = base.WdPage(wd_value='Q4115189')
 
 			if info and wd_page:
 				# iterate through each info extracted from infobox
